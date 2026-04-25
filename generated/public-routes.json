@@ -1,0 +1,15 @@
+{
+  "cloud": [
+    "GET /email/v1/messages",
+    "GET /email/v1/messages/:id",
+    "GET /sms/v1/messages",
+    "GET /sms/v1/phone-numbers",
+    "GET /vault/v1",
+    "GET /vault/v1/:vaultSlug/secrets",
+    "GET /vault/v1/:vaultSlug/secrets/:key",
+    "POST /email/v1/messages",
+    "POST /sms/v1/messages",
+    "POST /sms/v1/verification/check",
+    "POST /sms/v1/verification/start"
+  ]
+}
