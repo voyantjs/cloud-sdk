@@ -16,6 +16,10 @@ const emailRoutesFile = path.join(
   voyantCloudRepo,
   "apps/api/src/routes/email.ts",
 );
+const verifyRoutesFile = path.join(
+  voyantCloudRepo,
+  "apps/api/src/routes/verify.ts",
+);
 
 function fileExists(filePath) {
   return fs.existsSync(filePath);
@@ -67,6 +71,7 @@ const requiredFiles = [
   vaultRoutesFile,
   smsRoutesFile,
   emailRoutesFile,
+  verifyRoutesFile,
 ];
 
 if (!requiredFiles.every(fileExists)) {
@@ -82,6 +87,7 @@ const actualCloudRoutes = new Set([
   ...extractRoutes(vaultRoutesFile, "/vault/v1"),
   ...extractRoutes(smsRoutesFile, "/sms/v1"),
   ...extractRoutes(emailRoutesFile, "/email/v1"),
+  ...extractRoutes(verifyRoutesFile, "/verify/v1"),
 ]);
 
 verifyManifest("Cloud", actualCloudRoutes, new Set(manifest.cloud));

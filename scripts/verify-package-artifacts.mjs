@@ -95,6 +95,7 @@ function verifyInstalledImports(tarballs) {
           assert.equal(typeof cloud.sms.sendMessage, "function");
           assert.equal(typeof cloud.verification.start, "function");
           assert.equal(typeof cloud.verification.check, "function");
+          assert.equal(typeof cloud.verification.listAttempts, "function");
           assert.equal(typeof cloud.email.listMessages, "function");
           assert.equal(typeof cloud.email.sendMessage, "function");
           assert.equal(typeof cloud.email.getMessage, "function");
@@ -212,6 +213,8 @@ function verifyInstalledTypecheck(tarballs) {
         };
         const checkPromise: Promise<VerificationCheckResult> =
           cloud.verification.check(checkInput);
+        const attemptsPromise: Promise<VerificationAttemptSummary[]> =
+          cloud.verification.listAttempts();
 
         const emailListPromise: Promise<EmailMessageSummary[]> =
           cloud.email.listMessages();
@@ -240,6 +243,7 @@ function verifyInstalledTypecheck(tarballs) {
         void sendPromise;
         void startPromise;
         void checkPromise;
+        void attemptsPromise;
         void emailListPromise;
         void emailSendPromise;
         void emailGetPromise;

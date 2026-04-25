@@ -8,7 +8,7 @@ Public TypeScript client for Voyant Cloud APIs.
 
 - vault (read secrets)
 - sms (send messages, list phone numbers and messages)
-- verification (start and check verification attempts)
+- verification (start verification, check codes, list recent attempts)
 - email (list, send, and fetch email messages)
 
 ## Install
@@ -44,7 +44,7 @@ The `vault` group covers list-vaults, list-secrets, and get-secret routes.
 The `sms` group covers list-phone-numbers, list-messages, and send-message
 routes.
 
-The `verification` group covers verification start and check routes.
+The `verification` group covers verification start, check, and list-attempts routes.
 
 The `email` group covers list-messages, send-message, and get-message routes.
 
@@ -62,12 +62,12 @@ Useful exported types include:
 
 ## Notes
 
-- default base URL is `https://api.voyant.cloud`
+- default base URL is `https://api.voyantjs.com`
 - request auth defaults to `authorization: Bearer <apiKey>`
 - response envelopes of the form `{ data: ... }` are unwrapped by default
 - API tokens are scoped (`vault:read`, `sms:read`, `sms:send`,
   `phone-numbers:read`, `verification:start`, `verification:check`,
-  `emails:read`, `emails:send`); requests fail with `403` if the token does
-  not include the required scope
+  `verification:read`, `emails:read`, `emails:send`); requests fail with `403`
+  if the token does not include the required scope
 
 For repo-level context, see [../../docs/cloud.md](../../docs/cloud.md).

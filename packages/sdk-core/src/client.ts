@@ -1,7 +1,7 @@
 import { VoyantApiError } from "./errors.js";
 import type { QueryParams, VoyantRequestOptions, VoyantTransportOptions } from "./types.js";
 
-const DEFAULT_BASE_URL = "https://api.voyant.cloud";
+const DEFAULT_BASE_URL = "https://api.voyantjs.com";
 
 function appendQuery(url: URL, query: QueryParams | undefined) {
   if (!query) {

@@ -6,7 +6,7 @@
 
 - `vault` group for listing vaults and reading secrets
 - `sms` group for listing phone numbers, listing messages, and sending messages
-- `verification` group for starting and checking verification attempts
+- `verification` group for starting verification attempts, checking codes, and listing recent attempts
 - `email` group for listing, sending, and fetching email messages
 
 ## Key public types
@@ -29,6 +29,7 @@ API tokens are scoped. The required scopes per group:
 - `sms.sendMessage` requires `sms:send`
 - `verification.start` requires `verification:start`
 - `verification.check` requires `verification:check`
+- `verification.listAttempts` requires `verification:read`
 - `email.listMessages` and `email.getMessage` require `emails:read`
 - `email.sendMessage` requires `emails:send`
 

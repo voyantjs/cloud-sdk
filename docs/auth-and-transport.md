@@ -5,7 +5,7 @@ sibling SDK packages.
 
 ## Default behavior
 
-- default base URL: `https://api.voyant.cloud`
+- default base URL: `https://api.voyantjs.com`
 - default auth header: `authorization`
 - default auth scheme: `Bearer`
 - default user agent marker: `x-voyant-sdk: voyant-sdk`

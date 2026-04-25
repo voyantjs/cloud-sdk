@@ -18,6 +18,10 @@ const sources = [
     file: path.join(voyantCloudRepo, "apps/api/src/routes/email.ts"),
     pathPrefix: "/email/v1",
   },
+  {
+    file: path.join(voyantCloudRepo, "apps/api/src/routes/verify.ts"),
+    pathPrefix: "/verify/v1",
+  },
 ];
 
 const manifestFile = path.join(repoRoot, "generated", "public-routes.json");

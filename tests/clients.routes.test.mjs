@@ -35,7 +35,7 @@ test("cloud client composes vault routes correctly", async () => {
   await client.vault.listSecrets("primary");
   await client.vault.getSecret("primary", "stripe-key");
 
-  assert.equal(recorder.calls[0].url, "https://api.voyant.cloud/vault/v1");
+  assert.equal(recorder.calls[0].url, "https://api.voyantjs.com/vault/v1");
   assert.equal(recorder.calls[0].method, "GET");
   assert.equal(
     recorder.calls[0].headers.get("authorization"),
@@ -44,11 +44,11 @@ test("cloud client composes vault routes correctly", async () => {
 
   assert.equal(
     recorder.calls[1].url,
-    "https://api.voyant.cloud/vault/v1/primary/secrets",
+    "https://api.voyantjs.com/vault/v1/primary/secrets",
   );
   assert.equal(
     recorder.calls[2].url,
-    "https://api.voyant.cloud/vault/v1/primary/secrets/stripe-key",
+    "https://api.voyantjs.com/vault/v1/primary/secrets/stripe-key",
   );
 });
 
@@ -71,18 +71,18 @@ test("cloud client composes sms phone-number and message routes correctly", asyn
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyant.cloud/sms/v1/phone-numbers",
+    "https://api.voyantjs.com/sms/v1/phone-numbers",
   );
   assert.equal(recorder.calls[0].method, "GET");
 
   assert.equal(
     recorder.calls[1].url,
-    "https://api.voyant.cloud/sms/v1/messages",
+    "https://api.voyantjs.com/sms/v1/messages",
   );
 
   assert.equal(
     recorder.calls[2].url,
-    "https://api.voyant.cloud/sms/v1/messages",
+    "https://api.voyantjs.com/sms/v1/messages",
   );
   assert.equal(recorder.calls[2].method, "POST");
   assert.deepEqual(JSON.parse(recorder.calls[2].body), {
@@ -112,13 +112,13 @@ test("cloud client composes email message routes correctly", async () => {
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyant.cloud/email/v1/messages",
+    "https://api.voyantjs.com/email/v1/messages",
   );
   assert.equal(recorder.calls[0].method, "GET");
 
   assert.equal(
     recorder.calls[1].url,
-    "https://api.voyant.cloud/email/v1/messages",
+    "https://api.voyantjs.com/email/v1/messages",
   );
   assert.equal(recorder.calls[1].method, "POST");
   assert.deepEqual(JSON.parse(recorder.calls[1].body), {
@@ -130,12 +130,12 @@ test("cloud client composes email message routes correctly", async () => {
 
   assert.equal(
     recorder.calls[2].url,
-    "https://api.voyant.cloud/email/v1/messages/email_123",
+    "https://api.voyantjs.com/email/v1/messages/email_123",
   );
   assert.equal(recorder.calls[2].method, "GET");
 });
 
-test("cloud client composes verification start and check routes correctly", async () => {
+test("cloud client composes verification start, check, and attempts routes correctly", async () => {
   const recorder = createRecorder({
     responseBody: { data: { id: "ver_123", status: "approved", valid: true } },
   });
@@ -153,10 +153,11 @@ test("cloud client composes verification start and check routes correctly", asyn
     to: "+14155551234",
     code: "123456",
   });
+  await client.verification.listAttempts();
 
   assert.equal(
     recorder.calls[0].url,
-    "https://api.voyant.cloud/sms/v1/verification/start",
+    "https://api.voyantjs.com/verify/v1/start",
   );
   assert.equal(recorder.calls[0].method, "POST");
   assert.deepEqual(JSON.parse(recorder.calls[0].body), {
@@ -167,11 +168,17 @@ test("cloud client composes verification start and check routes correctly", asyn
 
   assert.equal(
     recorder.calls[1].url,
-    "https://api.voyant.cloud/sms/v1/verification/check",
+    "https://api.voyantjs.com/verify/v1/check",
   );
   assert.equal(recorder.calls[1].method, "POST");
   assert.deepEqual(JSON.parse(recorder.calls[1].body), {
     to: "+14155551234",
     code: "123456",
   });
+
+  assert.equal(
+    recorder.calls[2].url,
+    "https://api.voyantjs.com/verify/v1/attempts",
+  );
+  assert.equal(recorder.calls[2].method, "GET");
 });

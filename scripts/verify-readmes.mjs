@@ -55,7 +55,7 @@ function verifyPackageReadme({
     `pnpm add ${packageName}`,
     factoryName,
     envVar,
-    "https://api.voyant.cloud",
+    "https://api.voyantjs.com",
     docLink,
   ];
 

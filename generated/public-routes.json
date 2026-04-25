@@ -7,9 +7,10 @@
     "GET /vault/v1",
     "GET /vault/v1/:vaultSlug/secrets",
     "GET /vault/v1/:vaultSlug/secrets/:key",
+    "GET /verify/v1/attempts",
     "POST /email/v1/messages",
     "POST /sms/v1/messages",
-    "POST /sms/v1/verification/check",
-    "POST /sms/v1/verification/start"
+    "POST /verify/v1/check",
+    "POST /verify/v1/start"
   ]
 }

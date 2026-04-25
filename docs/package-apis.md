@@ -19,6 +19,7 @@ Root groups:
 - `client.sms.sendMessage(input)`
 - `client.verification.start(input)`
 - `client.verification.check(input)`
+- `client.verification.listAttempts()`
 - `client.email.listMessages()`
 - `client.email.sendMessage(input)`
 - `client.email.getMessage(id)`

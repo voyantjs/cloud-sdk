@@ -5,18 +5,24 @@ on:
     branches:
       - main
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
 
     permissions:
       contents: write
-      id-token: write
       pull-requests: write
+      id-token: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -26,7 +32,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
@@ -36,11 +42,39 @@ jobs:
       - name: Verify
         run: pnpm verify
 
-      - name: Create release PR or publish
+      - name: Create Release PR or Publish
+        id: changesets
         uses: changesets/action@v1
         with:
-          publish: pnpm release
           version: pnpm version-packages
+          publish: pnpm release
+          commit: "chore: release packages"
+          title: "chore: release packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+
+      - name: Determine release version
+        if: steps.changesets.outputs.published == 'true'
+        id: version
+        run: |
+          VERSION=$(node -p "require('./packages/cloud-sdk/package.json').version")
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Tag release
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          if git rev-parse -q --verify "refs/tags/v${{ steps.version.outputs.value }}" >/dev/null; then
+            echo "Tag v${{ steps.version.outputs.value }} already exists"
+          else
+            git tag "v${{ steps.version.outputs.value }}"
+            git push origin "v${{ steps.version.outputs.value }}"
+          fi
+
+      - name: Create GitHub release
+        if: steps.changesets.outputs.published == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.value }}
+          name: v${{ steps.version.outputs.value }}
+          generate_release_notes: true

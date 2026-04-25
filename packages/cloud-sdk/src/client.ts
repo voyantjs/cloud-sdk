@@ -48,21 +48,19 @@ export class VoyantCloudClient {
 
   readonly verification = {
     check: (input: CheckVerificationInput) =>
-      this.transport.request<VerificationCheckResult>(
-        "/sms/v1/verification/check",
-        {
-          body: input,
-          method: "POST",
-        },
+      this.transport.request<VerificationCheckResult>("/verify/v1/check", {
+        body: input,
+        method: "POST",
+      }),
+    listAttempts: () =>
+      this.transport.request<VerificationAttemptSummary[]>(
+        "/verify/v1/attempts",
       ),
     start: (input: StartVerificationInput) =>
-      this.transport.request<VerificationAttemptSummary>(
-        "/sms/v1/verification/start",
-        {
-          body: input,
-          method: "POST",
-        },
-      ),
+      this.transport.request<VerificationAttemptSummary>("/verify/v1/start", {
+        body: input,
+        method: "POST",
+      }),
   };
 
   readonly email = {
