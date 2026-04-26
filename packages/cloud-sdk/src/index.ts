@@ -6,6 +6,7 @@ export type {
   PhoneNumberCapabilities,
   PhoneNumberStatus,
   PhoneNumberSummary,
+  SendEmailAttachment,
   SendEmailInput,
   SendSmsInput,
   SmsMessageStatus,

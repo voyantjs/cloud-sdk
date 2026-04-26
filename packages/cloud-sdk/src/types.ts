@@ -144,9 +144,9 @@ export interface EmailMessageSummary {
   lastEventAt: string | null;
   openCount: number;
   organizationId: string;
+  providerEmailId: string | null;
   providerStatus: string | null;
   replyTo: string[];
-  resendEmailId: string | null;
   sentAt: string | null;
   status: EmailMessageStatus;
   subject: string;
@@ -154,7 +154,21 @@ export interface EmailMessageSummary {
   updatedAt: string;
 }
 
+export interface SendEmailAttachment {
+  /** Filename presented to the recipient. */
+  filename: string;
+  /** Base64-encoded file bytes. Mutually exclusive with `path`. */
+  content?: string;
+  /** Public URL the email provider will fetch. Mutually exclusive with `content`. */
+  path?: string;
+  /** MIME type override (e.g. "application/pdf"). */
+  contentType?: string;
+  /** Content-ID for inline images referenced via `cid:` in HTML. */
+  contentId?: string;
+}
+
 export interface SendEmailInput {
+  attachments?: SendEmailAttachment[] | null;
   bcc?: string[] | null;
   cc?: string[] | null;
   from: string;
