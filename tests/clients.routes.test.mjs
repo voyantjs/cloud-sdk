@@ -135,6 +135,127 @@ test("cloud client composes email message routes correctly", async () => {
   assert.equal(recorder.calls[2].method, "GET");
 });
 
+test("cloud client composes video routes correctly", async () => {
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({
+      body: init?.body,
+      method: init?.method ?? "GET",
+      url: String(url),
+    });
+    if (init?.method === "DELETE") {
+      return new Response(null, { status: 204 });
+    }
+    return new Response(JSON.stringify({ data: { id: "vid_1" } }), {
+      headers: { "content-type": "application/json" },
+      status: 200,
+    });
+  };
+
+  const client = createVoyantCloudClient({
+    apiKey: "video_key",
+    fetch: fetchImpl,
+  });
+
+  await client.video.videos.list();
+  assert.equal(calls[0].url, "https://api.voyantjs.com/video/v1/videos");
+  assert.equal(calls[0].method, "GET");
+
+  await client.video.videos.get("vid_1");
+  assert.equal(calls[1].url, "https://api.voyantjs.com/video/v1/videos/vid_1");
+
+  await client.video.videos.createUpload({
+    name: "demo",
+    maxDurationSeconds: 600,
+    requireSignedUrls: true,
+  });
+  assert.equal(calls[2].url, "https://api.voyantjs.com/video/v1/videos/upload");
+  assert.equal(calls[2].method, "POST");
+  assert.deepEqual(JSON.parse(calls[2].body), {
+    name: "demo",
+    maxDurationSeconds: 600,
+    requireSignedUrls: true,
+  });
+
+  await client.video.videos.createFromUrl({
+    url: "https://example.com/clip.mp4",
+    name: "imported",
+  });
+  assert.equal(
+    calls[3].url,
+    "https://api.voyantjs.com/video/v1/videos/from-url",
+  );
+
+  await client.video.videos.update("vid_1", { name: "renamed" });
+  assert.equal(calls[4].url, "https://api.voyantjs.com/video/v1/videos/vid_1");
+  assert.equal(calls[4].method, "PATCH");
+
+  await client.video.videos.delete("vid_1");
+  assert.equal(calls[5].url, "https://api.voyantjs.com/video/v1/videos/vid_1");
+  assert.equal(calls[5].method, "DELETE");
+
+  await client.video.videos.enableDownload("vid_1");
+  assert.equal(
+    calls[6].url,
+    "https://api.voyantjs.com/video/v1/videos/vid_1/downloads",
+  );
+  assert.equal(calls[6].method, "POST");
+
+  await client.video.videos.mintToken("vid_1", { expiresInSeconds: 600 });
+  assert.equal(
+    calls[7].url,
+    "https://api.voyantjs.com/video/v1/videos/vid_1/token",
+  );
+  assert.deepEqual(JSON.parse(calls[7].body), { expiresInSeconds: 600 });
+
+  await client.video.videos.captions.list("vid_1");
+  assert.equal(
+    calls[8].url,
+    "https://api.voyantjs.com/video/v1/videos/vid_1/captions",
+  );
+
+  await client.video.videos.captions.upload("vid_1", {
+    language: "en",
+    vtt: "WEBVTT\n\n00:00:00.000 --> 00:00:02.000\nhello",
+  });
+  assert.equal(
+    calls[9].url,
+    "https://api.voyantjs.com/video/v1/videos/vid_1/captions",
+  );
+  assert.equal(calls[9].method, "POST");
+
+  await client.video.videos.captions.generate("vid_1", { language: "en" });
+  assert.equal(
+    calls[10].url,
+    "https://api.voyantjs.com/video/v1/videos/vid_1/captions/generate",
+  );
+
+  await client.video.videos.captions.delete("vid_1", "en");
+  assert.equal(
+    calls[11].url,
+    "https://api.voyantjs.com/video/v1/videos/vid_1/captions/en",
+  );
+  assert.equal(calls[11].method, "DELETE");
+
+  await client.video.watermarks.list();
+  assert.equal(calls[12].url, "https://api.voyantjs.com/video/v1/watermarks");
+
+  await client.video.watermarks.create({
+    name: "logo",
+    url: "https://example.com/logo.png",
+    position: "lowerRight",
+  });
+  assert.equal(calls[13].url, "https://api.voyantjs.com/video/v1/watermarks");
+  assert.equal(calls[13].method, "POST");
+
+  await client.video.watermarks.delete("vwp_1");
+  assert.equal(
+    calls[14].url,
+    "https://api.voyantjs.com/video/v1/watermarks/vwp_1",
+  );
+  assert.equal(calls[14].method, "DELETE");
+});
+
 test("cloud client composes browser render and binary routes correctly", async () => {
   const calls = [];
   const fetchImpl = async (url, init) => {

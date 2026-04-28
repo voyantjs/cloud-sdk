@@ -22,6 +22,10 @@ const sources = [
     file: path.join(voyantCloudRepo, "apps/api/src/routes/verify.ts"),
     pathPrefix: "/verify/v1",
   },
+  {
+    file: path.join(voyantCloudRepo, "apps/api/src/routes/video.ts"),
+    pathPrefix: "/video/v1",
+  },
   // The browser surface is implemented in the voyant-browser-api worker
   // (apps/browser-api/src/app.ts) and the public api gateway forwards
   // /browser/v1/* through. The worker is the source of truth.

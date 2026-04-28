@@ -11,6 +11,8 @@
 - `browser` group for rendering web pages, taking screenshots and PDFs,
   scraping and extracting data, running long crawl jobs, and driving
   keep-alive Puppeteer sessions
+- `video` group for managing video uploads, playback, captions, watermarks,
+  and minting signed playback tokens
 
 ## Key public types
 
@@ -26,6 +28,13 @@
   `OpenBrowserSessionInput`, `BrowserCommand`, `RunBrowserCommandsInput`,
   `RunBrowserCommandsResult`, `BrowserCrawlSummary`, `StartBrowserCrawlInput`,
   `StartBrowserCrawlResult`, `BrowserSessionStatus`, `BrowserJobStatus`
+- video: `VideoSummary`, `VideoUploadTicket`, `VideoCaptionSummary`,
+  `VideoWatermarkProfileSummary`, `VideoSignedToken`,
+  `CreateVideoUploadInput`, `CreateVideoFromUrlInput`, `UpdateVideoInput`,
+  `MintVideoSignedTokenInput`, `UploadVideoCaptionInput`,
+  `GenerateVideoCaptionInput`, `CreateVideoWatermarkInput`,
+  `VideoStatus`, `VideoCaptionStatus`, `VideoDownloadStatus`,
+  `VideoWatermarkPosition`
 
 ## Auth scopes
 
@@ -46,6 +55,14 @@ API tokens are scoped. The required scopes per group:
 - `browser.json` requires `browser:extract`
 - `browser.crawls.*` requires `browser:crawl`
 - `browser.sessions.*` requires `browser:sessions`
+- `video.videos.{list, get, mintToken}`, `video.videos.captions.list`,
+  and `video.watermarks.list` require `video:read`
+- `video.videos.{createUpload, createFromUrl, update, enableDownload}`
+  requires `video:upload`
+- `video.videos.delete` requires `video:delete`
+- `video.videos.captions.{upload, generate, delete}` requires
+  `video:captions:write`
+- `video.watermarks.{create, delete}` requires `video:watermarks:write`
 
 ## Example
 
@@ -66,5 +83,10 @@ const html = await client.browser.content({ url: "https://example.com" });
 const pdf = await client.browser.pdf({
   url: "https://example.com",
   pdfOptions: { format: "a4", printBackground: true },
+});
+
+const ticket = await client.video.videos.createUpload({
+  name: "intro",
+  maxDurationSeconds: 600,
 });
 ```

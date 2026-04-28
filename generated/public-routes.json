@@ -2,6 +2,9 @@
   "cloud": [
     "DELETE /browser/v1/crawl/:id",
     "DELETE /browser/v1/sessions/:id",
+    "DELETE /video/v1/videos/:videoId",
+    "DELETE /video/v1/videos/:videoId/captions/:language",
+    "DELETE /video/v1/watermarks/:watermarkProfileId",
     "GET /browser/v1/crawl/:id",
     "GET /browser/v1/sessions",
     "GET /browser/v1/sessions/:id",
@@ -13,6 +16,11 @@
     "GET /vault/v1/:vaultSlug/secrets",
     "GET /vault/v1/:vaultSlug/secrets/:key",
     "GET /verify/v1/attempts",
+    "GET /video/v1/videos",
+    "GET /video/v1/videos/:videoId",
+    "GET /video/v1/videos/:videoId/captions",
+    "GET /video/v1/watermarks",
+    "PATCH /video/v1/videos/:videoId",
     "POST /browser/v1/content",
     "POST /browser/v1/crawl",
     "POST /browser/v1/json",
@@ -27,6 +35,13 @@
     "POST /email/v1/messages",
     "POST /sms/v1/messages",
     "POST /verify/v1/check",
-    "POST /verify/v1/start"
+    "POST /verify/v1/start",
+    "POST /video/v1/videos/:videoId/captions",
+    "POST /video/v1/videos/:videoId/captions/generate",
+    "POST /video/v1/videos/:videoId/downloads",
+    "POST /video/v1/videos/:videoId/token",
+    "POST /video/v1/videos/from-url",
+    "POST /video/v1/videos/upload",
+    "POST /video/v1/watermarks"
   ]
 }

@@ -444,3 +444,151 @@ export interface RunBrowserCommandsResult {
   results: BrowserCommandResult[];
   totalMs: number;
 }
+
+export type VideoStatus =
+  | "pending_upload"
+  | "downloading"
+  | "processing"
+  | "ready"
+  | "error";
+
+export type VideoCaptionStatus = "uploaded" | "inprogress" | "ready" | "error";
+
+export type VideoDownloadStatus = "disabled" | "inprogress" | "ready" | "error";
+
+export type VideoWatermarkPosition =
+  | "upperRight"
+  | "upperLeft"
+  | "lowerRight"
+  | "lowerLeft"
+  | "center";
+
+export interface VideoSummary {
+  id: string;
+  organizationId: string;
+  providerVideoUid: string | null;
+  name: string | null;
+  status: VideoStatus;
+  readyToStream: boolean;
+  durationSeconds: number | null;
+  sizeBytes: number | null;
+  inputWidth: number | null;
+  inputHeight: number | null;
+  thumbnailUrl: string | null;
+  thumbnailTimestampPct: number;
+  playbackHlsUrl: string | null;
+  playbackDashUrl: string | null;
+  requireSignedUrls: boolean;
+  allowedOrigins: string[];
+  maxDurationSeconds: number | null;
+  maxSizeBytes: number | null;
+  watermarkProfileId: string | null;
+  downloadStatus: VideoDownloadStatus;
+  downloadReadyAt: string | null;
+  errorCode: string | null;
+  errorMessage: string | null;
+  meta: Record<string, string>;
+  uploadedAt: string | null;
+  readyAt: string | null;
+  lastEventAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VideoUploadTicket {
+  video: VideoSummary;
+  uploadUrl: string;
+  uploadExpiresAt: string | null;
+}
+
+export interface VideoCaptionSummary {
+  id: string;
+  videoId: string;
+  organizationId: string;
+  language: string;
+  label: string | null;
+  status: VideoCaptionStatus;
+  generated: boolean;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VideoWatermarkProfileSummary {
+  id: string;
+  organizationId: string;
+  providerWatermarkUid: string;
+  name: string;
+  imageUrl: string | null;
+  sizeBytes: number | null;
+  height: number | null;
+  width: number | null;
+  opacity: number;
+  padding: number;
+  scale: number;
+  position: VideoWatermarkPosition;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VideoSignedToken {
+  videoId: string;
+  token: string;
+  expiresAt: number;
+}
+
+export interface CreateVideoUploadInput {
+  /** Cloudflare Stream caps total length at 21,600 seconds (6 hours). */
+  maxDurationSeconds: number;
+  name?: string | null;
+  requireSignedUrls?: boolean;
+  allowedOrigins?: string[];
+  watermarkProfileId?: string | null;
+  thumbnailTimestampPct?: number | null;
+  meta?: Record<string, string>;
+}
+
+export interface CreateVideoFromUrlInput {
+  url: string;
+  name?: string | null;
+  requireSignedUrls?: boolean;
+  allowedOrigins?: string[];
+  watermarkProfileId?: string | null;
+  thumbnailTimestampPct?: number | null;
+  meta?: Record<string, string>;
+}
+
+export interface UpdateVideoInput {
+  name?: string | null;
+  thumbnailTimestampPct?: number;
+  requireSignedUrls?: boolean;
+  allowedOrigins?: string[];
+  meta?: Record<string, string>;
+}
+
+export interface MintVideoSignedTokenInput {
+  /** Token lifetime in seconds. Range 60–86400, default 3600. */
+  expiresInSeconds?: number;
+  downloadable?: boolean;
+}
+
+export interface UploadVideoCaptionInput {
+  /** BCP-47 language tag (e.g. "en", "pt-BR"). */
+  language: string;
+  label?: string | null;
+  vtt: string;
+}
+
+export interface GenerateVideoCaptionInput {
+  language: string;
+  label?: string | null;
+}
+
+export interface CreateVideoWatermarkInput {
+  name: string;
+  url: string;
+  opacity?: number;
+  padding?: number;
+  scale?: number;
+  position?: VideoWatermarkPosition;
+}

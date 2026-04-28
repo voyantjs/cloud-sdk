@@ -20,6 +20,10 @@ const verifyRoutesFile = path.join(
   voyantCloudRepo,
   "apps/api/src/routes/verify.ts",
 );
+const videoRoutesFile = path.join(
+  voyantCloudRepo,
+  "apps/api/src/routes/video.ts",
+);
 const browserAppFile = path.join(
   voyantCloudRepo,
   "apps/browser-api/src/app.ts",
@@ -102,6 +106,7 @@ const requiredFiles = [
   smsRoutesFile,
   emailRoutesFile,
   verifyRoutesFile,
+  videoRoutesFile,
   browserAppFile,
   browserOperationsFile,
 ];
@@ -120,6 +125,7 @@ const actualCloudRoutes = new Set([
   ...extractRoutes(smsRoutesFile, "/sms/v1"),
   ...extractRoutes(emailRoutesFile, "/email/v1"),
   ...extractRoutes(verifyRoutesFile, "/verify/v1"),
+  ...extractRoutes(videoRoutesFile, "/video/v1"),
   ...extractBrowserRoutes(browserAppFile, browserOperationsFile, "/browser"),
 ]);
 

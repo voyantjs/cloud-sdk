@@ -11,7 +11,12 @@ import type {
   BrowserSessionSummary,
   BrowserSnapshotResult,
   CheckVerificationInput,
+  CreateVideoFromUrlInput,
+  CreateVideoUploadInput,
+  CreateVideoWatermarkInput,
   EmailMessageSummary,
+  GenerateVideoCaptionInput,
+  MintVideoSignedTokenInput,
   OpenBrowserSessionInput,
   PhoneNumberSummary,
   RunBrowserCommandsInput,
@@ -22,11 +27,18 @@ import type {
   StartBrowserCrawlInput,
   StartBrowserCrawlResult,
   StartVerificationInput,
+  UpdateVideoInput,
+  UploadVideoCaptionInput,
   VaultSecretSummary,
   VaultSecretValue,
   VaultSummary,
   VerificationAttemptSummary,
   VerificationCheckResult,
+  VideoCaptionSummary,
+  VideoSignedToken,
+  VideoSummary,
+  VideoUploadTicket,
+  VideoWatermarkProfileSummary,
   VoyantCloudClientOptions,
 } from "./types.js";
 
@@ -101,6 +113,103 @@ export class VoyantCloudClient {
         body: input,
         method: "POST",
       }),
+  };
+
+  readonly video = {
+    videos: {
+      list: () =>
+        this.transport.request<VideoSummary[]>("/video/v1/videos"),
+      get: (videoId: string) =>
+        this.transport.request<VideoSummary>(`/video/v1/videos/${videoId}`),
+      createUpload: (input: CreateVideoUploadInput) =>
+        this.transport.request<VideoUploadTicket>("/video/v1/videos/upload", {
+          body: input,
+          method: "POST",
+        }),
+      createFromUrl: (input: CreateVideoFromUrlInput) =>
+        this.transport.request<VideoSummary>("/video/v1/videos/from-url", {
+          body: input,
+          method: "POST",
+        }),
+      update: (videoId: string, input: UpdateVideoInput) =>
+        this.transport.request<VideoSummary>(`/video/v1/videos/${videoId}`, {
+          body: input,
+          method: "PATCH",
+        }),
+      delete: (videoId: string) =>
+        this.transport.request<null>(`/video/v1/videos/${videoId}`, {
+          method: "DELETE",
+          responseType: "text",
+        }),
+      enableDownload: (videoId: string) =>
+        this.transport.request<VideoSummary>(
+          `/video/v1/videos/${videoId}/downloads`,
+          { method: "POST" },
+        ),
+      mintToken: (
+        videoId: string,
+        input: MintVideoSignedTokenInput = {},
+      ) =>
+        this.transport.request<VideoSignedToken>(
+          `/video/v1/videos/${videoId}/token`,
+          {
+            body: input,
+            method: "POST",
+          },
+        ),
+      captions: {
+        list: (videoId: string) =>
+          this.transport.request<VideoCaptionSummary[]>(
+            `/video/v1/videos/${videoId}/captions`,
+          ),
+        upload: (videoId: string, input: UploadVideoCaptionInput) =>
+          this.transport.request<VideoCaptionSummary>(
+            `/video/v1/videos/${videoId}/captions`,
+            {
+              body: input,
+              method: "POST",
+            },
+          ),
+        generate: (videoId: string, input: GenerateVideoCaptionInput) =>
+          this.transport.request<VideoCaptionSummary>(
+            `/video/v1/videos/${videoId}/captions/generate`,
+            {
+              body: input,
+              method: "POST",
+            },
+          ),
+        delete: (videoId: string, language: string) =>
+          this.transport.request<null>(
+            `/video/v1/videos/${videoId}/captions/${language}`,
+            {
+              method: "DELETE",
+              responseType: "text",
+            },
+          ),
+      },
+    },
+    watermarks: {
+      list: () =>
+        this.transport.request<VideoWatermarkProfileSummary[]>(
+          "/video/v1/watermarks",
+        ),
+      create: (input: CreateVideoWatermarkInput) =>
+        this.transport.request<VideoWatermarkProfileSummary>(
+          "/video/v1/watermarks",
+          {
+            body: input,
+            method: "POST",
+          },
+        ),
+      delete: (watermarkProfileId: string) =>
+        this.transport.request<null>(
+          `/video/v1/watermarks/${watermarkProfileId}`,
+          {
+            method: "DELETE",
+            responseType: "text",
+          },
+        ),
+    },
   };
 
   readonly browser = {

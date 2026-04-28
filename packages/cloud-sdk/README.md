@@ -12,6 +12,8 @@ Public TypeScript client for Voyant Cloud APIs.
 - email (list, send, and fetch email messages)
 - browser (render content, screenshots, PDFs; scrape and extract; manage
   long-running crawls and keep-alive Puppeteer sessions)
+- video (manage uploads, playback, captions, watermarks, signed playback
+  tokens; create videos from a public URL)
 
 ## Install
 
@@ -41,6 +43,7 @@ Root groups:
 - `verification`
 - `email`
 - `browser`
+- `video`
 
 The `vault` group covers list-vaults, list-secrets, and get-secret routes.
 
@@ -80,6 +83,29 @@ await client.browser.sessions.runCommands(session.id, {
 await client.browser.sessions.close(session.id);
 ```
 
+The `video` group covers the Voyant video service: `videos.{list, get,
+createUpload, createFromUrl, update, delete, enableDownload, mintToken}`,
+captions under `videos.captions.{list, upload, generate, delete}`, and
+`watermarks.{list, create, delete}`.
+
+```ts
+import { createVoyantCloudClient } from "@voyantjs/cloud-sdk";
+
+const client = createVoyantCloudClient({
+  apiKey: process.env.VOYANT_API_KEY!,
+});
+
+const ticket = await client.video.videos.createUpload({
+  name: "intro",
+  maxDurationSeconds: 600,
+});
+// upload the file to ticket.uploadUrl with a PUT/POST as Cloudflare Stream expects
+
+const playback = await client.video.videos.mintToken(ticket.video.id, {
+  expiresInSeconds: 3600,
+});
+```
+
 ## Key public types
 
 Useful exported types include:
@@ -94,6 +120,13 @@ Useful exported types include:
 - `BrowserSessionSummary`, `OpenBrowserSessionInput`, `BrowserCommand`,
   `RunBrowserCommandsInput`, `RunBrowserCommandsResult`
 - `BrowserCrawlSummary`, `StartBrowserCrawlInput`, `StartBrowserCrawlResult`
+- `VideoSummary`, `VideoUploadTicket`, `VideoCaptionSummary`,
+  `VideoWatermarkProfileSummary`, `VideoSignedToken`
+- `CreateVideoUploadInput`, `CreateVideoFromUrlInput`, `UpdateVideoInput`,
+  `MintVideoSignedTokenInput`, `UploadVideoCaptionInput`,
+  `GenerateVideoCaptionInput`, `CreateVideoWatermarkInput`,
+  `VideoStatus`, `VideoCaptionStatus`, `VideoDownloadStatus`,
+  `VideoWatermarkPosition`
 - `PhoneNumberStatus`, `SmsMessageStatus`, `VerificationChannel`,
   `VerificationAttemptStatus`, `EmailMessageStatus`,
   `BrowserSessionStatus`, `BrowserJobStatus`
@@ -106,7 +139,9 @@ Useful exported types include:
 - API tokens are scoped (`vault:read`, `sms:read`, `sms:send`,
   `phone-numbers:read`, `verification:start`, `verification:check`,
   `verification:read`, `emails:read`, `emails:send`, `browser:render`,
-  `browser:scrape`, `browser:extract`, `browser:crawl`, `browser:sessions`);
+  `browser:scrape`, `browser:extract`, `browser:crawl`, `browser:sessions`,
+  `video:read`, `video:upload`, `video:delete`, `video:captions:write`,
+  `video:watermarks:write`);
   requests fail with `403` if the token does not include the required scope
 
 For repo-level context, see [../../docs/cloud.md](../../docs/cloud.md).
