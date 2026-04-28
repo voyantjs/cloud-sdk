@@ -1,6 +1,6 @@
-# @voyantjs/cloud-sdk
+# @voyant-sdk/sdk-core
 
-## 0.3.0
+## 0.2.0
 
 ### Minor Changes
 
@@ -13,16 +13,3 @@
   `@voyant-sdk/sdk-core` adds a `responseType` option to `VoyantRequestOptions`
   (`"json" | "text" | "binary"`) so the transport can return raw text or a
   `Uint8Array` for binary endpoints (used by `screenshot`/`pdf`).
-
-### Patch Changes
-
-- Updated dependencies [1e5b76e]
-  - @voyant-sdk/sdk-core@0.2.0
-
-## 0.2.0
-
-### Minor Changes
-
-- d61f7c9: Email surface updates:
-  - add `attachments` to `SendEmailInput` and export new `SendEmailAttachment` type for sending file attachments (base64 `content` or remote `path`, with optional `contentType` and `contentId` for inline images)
-  - rename `EmailMessageSummary.resendEmailId` to `providerEmailId` to reflect that the field carries the upstream provider's message id rather than a Resend-specific value
