@@ -20,6 +20,14 @@ const verifyRoutesFile = path.join(
   voyantCloudRepo,
   "apps/api/src/routes/verify.ts",
 );
+const browserAppFile = path.join(
+  voyantCloudRepo,
+  "apps/browser-api/src/app.ts",
+);
+const browserOperationsFile = path.join(
+  voyantCloudRepo,
+  "apps/browser-api/src/lib/operation.ts",
+);
 
 function fileExists(filePath) {
   return fs.existsSync(filePath);
@@ -43,6 +51,28 @@ function extractRoutes(filePath, pathPrefix = "") {
         `${method.toUpperCase()} ${joinPath(pathPrefix, route)}`,
     ),
   );
+}
+
+function extractRenderOperations(operationsFile) {
+  const source = fs.readFileSync(operationsFile, "utf8");
+  const match = source.match(
+    /export\s+const\s+RENDER_OPERATIONS\s*=\s*\[([\s\S]*?)\]\s*as\s+const/,
+  );
+  if (!match) {
+    throw new Error(
+      `Could not extract RENDER_OPERATIONS from ${operationsFile}`,
+    );
+  }
+  return [...match[1].matchAll(/"([^"]+)"/g)].map(([, name]) => name);
+}
+
+function extractBrowserRoutes(appFile, operationsFile, pathPrefix) {
+  const base = extractRoutes(appFile, pathPrefix);
+  for (const op of extractRenderOperations(operationsFile)) {
+    base.add(`POST ${joinPath(pathPrefix, `/v1/${op}`)}`);
+  }
+  base.delete(`GET ${joinPath(pathPrefix, "/health")}`);
+  return base;
 }
 
 function verifyManifest(label, actualRoutes, expectedRoutes) {
@@ -72,6 +102,8 @@ const requiredFiles = [
   smsRoutesFile,
   emailRoutesFile,
   verifyRoutesFile,
+  browserAppFile,
+  browserOperationsFile,
 ];
 
 if (!requiredFiles.every(fileExists)) {
@@ -88,6 +120,7 @@ const actualCloudRoutes = new Set([
   ...extractRoutes(smsRoutesFile, "/sms/v1"),
   ...extractRoutes(emailRoutesFile, "/email/v1"),
   ...extractRoutes(verifyRoutesFile, "/verify/v1"),
+  ...extractBrowserRoutes(browserAppFile, browserOperationsFile, "/browser"),
 ]);
 
 verifyManifest("Cloud", actualCloudRoutes, new Set(manifest.cloud));

@@ -22,6 +22,17 @@ const sources = [
     file: path.join(voyantCloudRepo, "apps/api/src/routes/verify.ts"),
     pathPrefix: "/verify/v1",
   },
+  // The browser surface is implemented in the voyant-browser-api worker
+  // (apps/browser-api/src/app.ts) and the public api gateway forwards
+  // /browser/v1/* through. The worker is the source of truth.
+  {
+    file: path.join(voyantCloudRepo, "apps/browser-api/src/app.ts"),
+    operationsFile: path.join(
+      voyantCloudRepo,
+      "apps/browser-api/src/lib/operation.ts",
+    ),
+    pathPrefix: "/browser",
+  },
 ];
 
 const manifestFile = path.join(repoRoot, "generated", "public-routes.json");
@@ -46,7 +57,35 @@ function extractRoutes(filePath, pathPrefix) {
   );
 }
 
-if (!sources.every((source) => fileExists(source.file))) {
+function extractRenderOperations(operationsFile) {
+  const source = fs.readFileSync(operationsFile, "utf8");
+  const match = source.match(
+    /export\s+const\s+RENDER_OPERATIONS\s*=\s*\[([\s\S]*?)\]\s*as\s+const/,
+  );
+  if (!match) {
+    throw new Error(
+      `Could not extract RENDER_OPERATIONS from ${operationsFile}`,
+    );
+  }
+  return [...match[1].matchAll(/"([^"]+)"/g)].map(([, name]) => name);
+}
+
+function extractBrowserRoutes(file, operationsFile, pathPrefix) {
+  const baseRoutes = extractRoutes(file, pathPrefix);
+  const renderOps = extractRenderOperations(operationsFile);
+  const renderRoutes = renderOps.map(
+    (op) => `POST ${joinPath(pathPrefix, `/v1/${op}`)}`,
+  );
+  return [...baseRoutes, ...renderRoutes];
+}
+
+if (
+  !sources.every(
+    (source) =>
+      fileExists(source.file) &&
+      (!source.operationsFile || fileExists(source.operationsFile)),
+  )
+) {
   console.error(
     "Unable to sync route manifests: sibling voyant-cloud route files were not found.",
   );
@@ -54,7 +93,17 @@ if (!sources.every((source) => fileExists(source.file))) {
 }
 
 const cloudRoutes = sources
-  .flatMap((source) => extractRoutes(source.file, source.pathPrefix))
+  .flatMap((source) => {
+    if (source.operationsFile) {
+      return extractBrowserRoutes(
+        source.file,
+        source.operationsFile,
+        source.pathPrefix,
+      );
+    }
+    return extractRoutes(source.file, source.pathPrefix);
+  })
+  .filter((route) => !/\s\/[^/\s]+\/health$/.test(route))
   .sort();
 
 const manifest = { cloud: cloudRoutes };

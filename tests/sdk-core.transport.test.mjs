@@ -62,6 +62,68 @@ test("VoyantTransport can return the raw response envelope", async () => {
   assert.deepEqual(result, { data: { ok: true }, meta: { page: 1 } });
 });
 
+test("VoyantTransport returns Uint8Array when responseType is binary", async () => {
+  const transport = new VoyantTransport({
+    apiKey: "test_key",
+    fetch: async () =>
+      new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47]), {
+        headers: { "content-type": "image/png" },
+        status: 200,
+      }),
+  });
+
+  const result = await transport.request("/v1/screenshot", {
+    method: "POST",
+    responseType: "binary",
+  });
+
+  assert.ok(result instanceof Uint8Array);
+  assert.deepEqual(Array.from(result), [0x89, 0x50, 0x4e, 0x47]);
+});
+
+test("VoyantTransport returns raw text when responseType is text", async () => {
+  const transport = new VoyantTransport({
+    apiKey: "test_key",
+    fetch: async () =>
+      new Response("# heading", {
+        headers: { "content-type": "text/markdown" },
+        status: 200,
+      }),
+  });
+
+  const result = await transport.request("/v1/markdown", {
+    method: "POST",
+    responseType: "text",
+  });
+
+  assert.equal(result, "# heading");
+});
+
+test("VoyantTransport surfaces errors for binary requests", async () => {
+  const transport = new VoyantTransport({
+    apiKey: "test_key",
+    fetch: async () =>
+      new Response(JSON.stringify({ message: "boom" }), {
+        headers: { "content-type": "application/json" },
+        status: 502,
+      }),
+  });
+
+  await assert.rejects(
+    () =>
+      transport.request("/v1/screenshot", {
+        method: "POST",
+        responseType: "binary",
+      }),
+    (error) => {
+      assert.ok(error instanceof VoyantApiError);
+      assert.equal(error.status, 502);
+      assert.equal(error.message, "boom");
+      return true;
+    },
+  );
+});
+
 test("VoyantTransport throws VoyantApiError for non-2xx responses", async () => {
   const transport = new VoyantTransport({
     apiKey: "test_key",

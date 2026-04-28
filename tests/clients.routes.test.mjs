@@ -135,6 +135,179 @@ test("cloud client composes email message routes correctly", async () => {
   assert.equal(recorder.calls[2].method, "GET");
 });
 
+test("cloud client composes browser render and binary routes correctly", async () => {
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({
+      body: init?.body,
+      method: init?.method ?? "GET",
+      url: String(url),
+    });
+    if (String(url).endsWith("/browser/v1/screenshot")) {
+      return new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47]), {
+        headers: { "content-type": "image/png" },
+        status: 200,
+      });
+    }
+    if (String(url).endsWith("/browser/v1/pdf")) {
+      return new Response(new Uint8Array([0x25, 0x50, 0x44, 0x46]), {
+        headers: { "content-type": "application/pdf" },
+        status: 200,
+      });
+    }
+    return new Response(
+      JSON.stringify({ success: true, result: "<html></html>" }),
+      {
+        headers: { "content-type": "application/json" },
+        status: 200,
+      },
+    );
+  };
+
+  const client = createVoyantCloudClient({
+    apiKey: "browser_key",
+    fetch: fetchImpl,
+  });
+
+  const html = await client.browser.content({ url: "https://example.com" });
+  assert.equal(html, "<html></html>");
+  assert.equal(calls[0].url, "https://api.voyantjs.com/browser/v1/content");
+  assert.equal(calls[0].method, "POST");
+  assert.deepEqual(JSON.parse(calls[0].body), { url: "https://example.com" });
+
+  await client.browser.markdown({ url: "https://example.com" });
+  assert.equal(calls[1].url, "https://api.voyantjs.com/browser/v1/markdown");
+
+  await client.browser.snapshot({ url: "https://example.com" });
+  assert.equal(calls[2].url, "https://api.voyantjs.com/browser/v1/snapshot");
+
+  await client.browser.scrape({
+    url: "https://example.com",
+    elements: [{ selector: "h1" }],
+  });
+  assert.equal(calls[3].url, "https://api.voyantjs.com/browser/v1/scrape");
+
+  await client.browser.links({ url: "https://example.com" });
+  assert.equal(calls[4].url, "https://api.voyantjs.com/browser/v1/links");
+
+  await client.browser.json({
+    url: "https://example.com",
+    prompt: "extract the title",
+  });
+  assert.equal(calls[5].url, "https://api.voyantjs.com/browser/v1/json");
+
+  const screenshot = await client.browser.screenshot({
+    url: "https://example.com",
+  });
+  assert.ok(screenshot instanceof Uint8Array);
+  assert.equal(screenshot.length, 4);
+  assert.equal(screenshot[0], 0x89);
+  assert.equal(calls[6].url, "https://api.voyantjs.com/browser/v1/screenshot");
+
+  const pdf = await client.browser.pdf({ url: "https://example.com" });
+  assert.ok(pdf instanceof Uint8Array);
+  assert.equal(pdf[0], 0x25);
+  assert.equal(calls[7].url, "https://api.voyantjs.com/browser/v1/pdf");
+});
+
+test("cloud client composes browser crawl routes correctly", async () => {
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({
+      body: init?.body,
+      method: init?.method ?? "GET",
+      url: String(url),
+    });
+    if (init?.method === "DELETE") {
+      return new Response(null, { status: 204 });
+    }
+    return new Response(
+      JSON.stringify({ id: "bjob_1", status: "running", providerJobId: "cf_1" }),
+      {
+        headers: { "content-type": "application/json" },
+        status: 200,
+      },
+    );
+  };
+
+  const client = createVoyantCloudClient({
+    apiKey: "browser_key",
+    fetch: fetchImpl,
+  });
+
+  const start = await client.browser.crawls.start({
+    url: "https://example.com",
+  });
+  assert.deepEqual(start, {
+    id: "bjob_1",
+    status: "running",
+    providerJobId: "cf_1",
+  });
+  assert.equal(calls[0].url, "https://api.voyantjs.com/browser/v1/crawl");
+  assert.equal(calls[0].method, "POST");
+
+  await client.browser.crawls.get("bjob_1");
+  assert.equal(calls[1].url, "https://api.voyantjs.com/browser/v1/crawl/bjob_1");
+  assert.equal(calls[1].method, "GET");
+
+  await client.browser.crawls.cancel("bjob_1");
+  assert.equal(calls[2].url, "https://api.voyantjs.com/browser/v1/crawl/bjob_1");
+  assert.equal(calls[2].method, "DELETE");
+});
+
+test("cloud client composes browser session routes correctly", async () => {
+  const recorder = createRecorder({
+    responseBody: { data: { id: "bsess_1", status: "active" } },
+  });
+  const client = createVoyantCloudClient({
+    apiKey: "browser_key",
+    fetch: recorder.fetch,
+  });
+
+  await client.browser.sessions.open({ label: "test", keepAliveMs: 60_000 });
+  assert.equal(recorder.calls[0].url, "https://api.voyantjs.com/browser/v1/sessions");
+  assert.equal(recorder.calls[0].method, "POST");
+  assert.deepEqual(JSON.parse(recorder.calls[0].body), {
+    label: "test",
+    keepAliveMs: 60_000,
+  });
+
+  await client.browser.sessions.list();
+  assert.equal(recorder.calls[1].url, "https://api.voyantjs.com/browser/v1/sessions");
+  assert.equal(recorder.calls[1].method, "GET");
+
+  await client.browser.sessions.get("bsess_1");
+  assert.equal(
+    recorder.calls[2].url,
+    "https://api.voyantjs.com/browser/v1/sessions/bsess_1",
+  );
+
+  await client.browser.sessions.runCommands("bsess_1", {
+    commands: [
+      { op: "goto", url: "https://example.com" },
+      { op: "screenshot" },
+    ],
+  });
+  assert.equal(
+    recorder.calls[3].url,
+    "https://api.voyantjs.com/browser/v1/sessions/bsess_1/commands",
+  );
+  assert.equal(recorder.calls[3].method, "POST");
+  assert.deepEqual(JSON.parse(recorder.calls[3].body), {
+    commands: [
+      { op: "goto", url: "https://example.com" },
+      { op: "screenshot" },
+    ],
+  });
+
+  await client.browser.sessions.close("bsess_1");
+  assert.equal(
+    recorder.calls[4].url,
+    "https://api.voyantjs.com/browser/v1/sessions/bsess_1",
+  );
+  assert.equal(recorder.calls[4].method, "DELETE");
+});
+
 test("cloud client composes verification start, check, and attempts routes correctly", async () => {
   const recorder = createRecorder({
     responseBody: { data: { id: "ver_123", status: "approved", valid: true } },

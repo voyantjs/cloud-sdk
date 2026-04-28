@@ -8,7 +8,7 @@ Markdown under [`docs/`](./docs).
 
 ## Packages
 
-- `@voyantjs/cloud-sdk`: client for Voyant Cloud vault, sms, and verification APIs
+- `@voyantjs/cloud-sdk`: client for Voyant Cloud vault, sms, verification, email, and browser APIs
 - `@voyant-sdk/sdk-core`: private shared runtime bundled into the public package
 
 ## Workspace layout

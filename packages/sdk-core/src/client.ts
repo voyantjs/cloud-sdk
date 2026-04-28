@@ -131,7 +131,42 @@ export class VoyantTransport {
       signal: options.signal,
     });
 
+    const responseType = options.responseType ?? "json";
+
+    if (responseType === "binary") {
+      if (!response.ok) {
+        const text = await response.text();
+        const parsed = maybeJson(text, response.headers.get("content-type"));
+        throw new VoyantApiError(
+          getErrorMessage(parsed, `Request failed with status ${response.status}`),
+          {
+            body: parsed,
+            requestId: response.headers.get("x-request-id"),
+            status: response.status,
+          },
+        );
+      }
+      const buffer = await response.arrayBuffer();
+      return new Uint8Array(buffer) as T;
+    }
+
     const text = await response.text();
+
+    if (responseType === "text") {
+      if (!response.ok) {
+        const parsed = maybeJson(text, response.headers.get("content-type"));
+        throw new VoyantApiError(
+          getErrorMessage(parsed, `Request failed with status ${response.status}`),
+          {
+            body: parsed,
+            requestId: response.headers.get("x-request-id"),
+            status: response.status,
+          },
+        );
+      }
+      return text as T;
+    }
+
     const parsed = maybeJson(text, response.headers.get("content-type"));
 
     if (!response.ok) {

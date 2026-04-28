@@ -8,5 +8,6 @@ export type {
   QueryParams,
   QueryValue,
   VoyantRequestOptions,
+  VoyantResponseType,
   VoyantTransportOptions,
 } from "./types.js";

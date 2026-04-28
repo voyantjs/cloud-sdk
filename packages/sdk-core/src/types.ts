@@ -24,11 +24,14 @@ export interface VoyantTransportOptions {
   userAgent?: string;
 }
 
+export type VoyantResponseType = "json" | "text" | "binary";
+
 export interface VoyantRequestOptions {
   body?: BodyInit | object | null;
   headers?: HeadersInit;
   method?: "DELETE" | "GET" | "PATCH" | "POST" | "PUT";
   query?: QueryParams;
+  responseType?: VoyantResponseType;
   signal?: AbortSignal;
   unwrapData?: boolean;
 }

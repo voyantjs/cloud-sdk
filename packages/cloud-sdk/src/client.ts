@@ -1,11 +1,26 @@
 import { VoyantTransport } from "@voyant-sdk/sdk-core";
 import type {
+  BrowserCrawlSummary,
+  BrowserJsonInput,
+  BrowserLink,
+  BrowserPdfInput,
+  BrowserRenderInput,
+  BrowserScrapeInput,
+  BrowserScrapeResult,
+  BrowserScreenshotInput,
+  BrowserSessionSummary,
+  BrowserSnapshotResult,
   CheckVerificationInput,
   EmailMessageSummary,
+  OpenBrowserSessionInput,
   PhoneNumberSummary,
+  RunBrowserCommandsInput,
+  RunBrowserCommandsResult,
   SendEmailInput,
   SendSmsInput,
   SmsMessageSummary,
+  StartBrowserCrawlInput,
+  StartBrowserCrawlResult,
   StartVerificationInput,
   VaultSecretSummary,
   VaultSecretValue,
@@ -14,6 +29,19 @@ import type {
   VerificationCheckResult,
   VoyantCloudClientOptions,
 } from "./types.js";
+
+interface CloudflareBrowserResultEnvelope<T> {
+  success?: boolean;
+  result?: T;
+  errors?: Array<{ message: string }>;
+}
+
+function unwrapBrowserResult<T>(envelope: CloudflareBrowserResultEnvelope<T>): T {
+  if (envelope && typeof envelope === "object" && "result" in envelope && envelope.result !== undefined) {
+    return envelope.result as T;
+  }
+  return envelope as unknown as T;
+}
 
 export class VoyantCloudClient {
   readonly transport: VoyantTransport;
@@ -73,6 +101,126 @@ export class VoyantCloudClient {
         body: input,
         method: "POST",
       }),
+  };
+
+  readonly browser = {
+    content: async (input: BrowserRenderInput) => {
+      const envelope = await this.transport.request<
+        CloudflareBrowserResultEnvelope<string>
+      >("/browser/v1/content", {
+        body: input,
+        method: "POST",
+        unwrapData: false,
+      });
+      return unwrapBrowserResult<string>(envelope);
+    },
+    markdown: async (input: BrowserRenderInput) => {
+      const envelope = await this.transport.request<
+        CloudflareBrowserResultEnvelope<string>
+      >("/browser/v1/markdown", {
+        body: input,
+        method: "POST",
+        unwrapData: false,
+      });
+      return unwrapBrowserResult<string>(envelope);
+    },
+    snapshot: async (input: BrowserRenderInput) => {
+      const envelope = await this.transport.request<
+        CloudflareBrowserResultEnvelope<BrowserSnapshotResult>
+      >("/browser/v1/snapshot", {
+        body: input,
+        method: "POST",
+        unwrapData: false,
+      });
+      return unwrapBrowserResult<BrowserSnapshotResult>(envelope);
+    },
+    scrape: async (input: BrowserScrapeInput) => {
+      const envelope = await this.transport.request<
+        CloudflareBrowserResultEnvelope<BrowserScrapeResult["results"]>
+      >("/browser/v1/scrape", {
+        body: input,
+        method: "POST",
+        unwrapData: false,
+      });
+      return unwrapBrowserResult<BrowserScrapeResult["results"]>(envelope);
+    },
+    links: async (input: BrowserRenderInput) => {
+      const envelope = await this.transport.request<
+        CloudflareBrowserResultEnvelope<BrowserLink[] | string[]>
+      >("/browser/v1/links", {
+        body: input,
+        method: "POST",
+        unwrapData: false,
+      });
+      return unwrapBrowserResult<BrowserLink[] | string[]>(envelope);
+    },
+    json: async <T = unknown>(input: BrowserJsonInput) => {
+      const envelope = await this.transport.request<
+        CloudflareBrowserResultEnvelope<T>
+      >("/browser/v1/json", {
+        body: input,
+        method: "POST",
+        unwrapData: false,
+      });
+      return unwrapBrowserResult<T>(envelope);
+    },
+    screenshot: (input: BrowserScreenshotInput) =>
+      this.transport.request<Uint8Array>("/browser/v1/screenshot", {
+        body: input,
+        method: "POST",
+        responseType: "binary",
+      }),
+    pdf: (input: BrowserPdfInput) =>
+      this.transport.request<Uint8Array>("/browser/v1/pdf", {
+        body: input,
+        method: "POST",
+        responseType: "binary",
+      }),
+    crawls: {
+      start: (input: StartBrowserCrawlInput) =>
+        this.transport.request<StartBrowserCrawlResult>("/browser/v1/crawl", {
+          body: input,
+          method: "POST",
+          unwrapData: false,
+        }),
+      get: (id: string) =>
+        this.transport.request<BrowserCrawlSummary>(`/browser/v1/crawl/${id}`, {
+          unwrapData: false,
+        }),
+      cancel: (id: string) =>
+        this.transport.request<null>(`/browser/v1/crawl/${id}`, {
+          method: "DELETE",
+          responseType: "text",
+        }),
+    },
+    sessions: {
+      open: (input: OpenBrowserSessionInput = {}) =>
+        this.transport.request<BrowserSessionSummary>("/browser/v1/sessions", {
+          body: input,
+          method: "POST",
+        }),
+      list: () =>
+        this.transport.request<BrowserSessionSummary[]>("/browser/v1/sessions"),
+      get: (id: string) =>
+        this.transport.request<BrowserSessionSummary>(
+          `/browser/v1/sessions/${id}`,
+        ),
+      runCommands: (id: string, input: RunBrowserCommandsInput) =>
+        this.transport.request<RunBrowserCommandsResult>(
+          `/browser/v1/sessions/${id}/commands`,
+          {
+            body: input,
+            method: "POST",
+          },
+        ),
+      close: (id: string) =>
+        this.transport.request<BrowserSessionSummary>(
+          `/browser/v1/sessions/${id}`,
+          {
+            method: "DELETE",
+          },
+        ),
+    },
   };
 }
 

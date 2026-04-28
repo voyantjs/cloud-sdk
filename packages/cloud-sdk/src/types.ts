@@ -178,3 +178,269 @@ export interface SendEmailInput {
   text?: string | null;
   to: string[];
 }
+
+export type BrowserSessionStatus = "active" | "closed" | "expired";
+
+export type BrowserJobKind = "crawl";
+
+export type BrowserJobStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "errored"
+  | "cancelled_due_to_timeout"
+  | "cancelled_due_to_limits"
+  | "cancelled_by_user";
+
+export type BrowserWaitUntil =
+  | "load"
+  | "domcontentloaded"
+  | "networkidle0"
+  | "networkidle2";
+
+export type BrowserSameSite = "Strict" | "Lax" | "None";
+
+export interface BrowserCookie {
+  name: string;
+  value: string;
+  url?: string;
+  domain?: string;
+  path?: string;
+  expires?: number;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: BrowserSameSite;
+}
+
+export interface BrowserViewport {
+  width: number;
+  height: number;
+  deviceScaleFactor?: number;
+  isMobile?: boolean;
+  hasTouch?: boolean;
+  isLandscape?: boolean;
+}
+
+export interface BrowserGoToOptions {
+  timeout?: number;
+  waitUntil?: BrowserWaitUntil;
+  referer?: string;
+}
+
+export interface BrowserWaitForSelector {
+  selector: string;
+  timeout?: number;
+  visible?: boolean;
+  hidden?: boolean;
+}
+
+export interface BrowserScreenshotOptions {
+  fullPage?: boolean;
+  omitBackground?: boolean;
+  type?: "png" | "jpeg" | "webp";
+  quality?: number;
+  clip?: { x: number; y: number; width: number; height: number };
+}
+
+export interface BrowserPdfOptions {
+  format?:
+    | "letter"
+    | "legal"
+    | "tabloid"
+    | "ledger"
+    | "a0"
+    | "a1"
+    | "a2"
+    | "a3"
+    | "a4"
+    | "a5"
+    | "a6";
+  landscape?: boolean;
+  printBackground?: boolean;
+  scale?: number;
+  margin?: {
+    top?: number | string;
+    bottom?: number | string;
+    left?: number | string;
+    right?: number | string;
+  };
+}
+
+/**
+ * Common request fields accepted by every browser render endpoint. Forwarded
+ * to Cloudflare Browser Rendering, so any field supported by that API is
+ * accepted as well via the index signature.
+ */
+export interface BrowserRenderInput {
+  url?: string;
+  html?: string;
+  cookies?: BrowserCookie[];
+  viewport?: BrowserViewport;
+  userAgent?: string;
+  setExtraHTTPHeaders?: Record<string, string>;
+  authenticate?: { username: string; password: string };
+  rejectResourceTypes?: string[];
+  rejectRequestPattern?: string[];
+  allowResourceTypes?: string[];
+  allowRequestPattern?: string[];
+  bestAttempt?: boolean;
+  emulateMediaType?: "screen" | "print";
+  goToOptions?: BrowserGoToOptions;
+  waitForSelector?: BrowserWaitForSelector;
+  waitForTimeout?: number;
+  [key: string]: unknown;
+}
+
+export interface BrowserScreenshotInput extends BrowserRenderInput {
+  selector?: string;
+  screenshotOptions?: BrowserScreenshotOptions;
+}
+
+export interface BrowserPdfInput extends BrowserRenderInput {
+  pdfOptions?: BrowserPdfOptions;
+}
+
+export interface BrowserScrapeElement {
+  selector: string;
+}
+
+export interface BrowserScrapeInput extends BrowserRenderInput {
+  elements?: BrowserScrapeElement[];
+}
+
+export interface BrowserScrapeResult {
+  results: Array<{
+    selector: string;
+    results: Array<{
+      text: string;
+      attributes: Array<{ name: string; value: string }>;
+      html?: string;
+      width?: number;
+      height?: number;
+      top?: number;
+      left?: number;
+    }>;
+  }>;
+}
+
+export interface BrowserLink {
+  url: string;
+  text?: string;
+}
+
+export interface BrowserSnapshotResult {
+  content: string;
+  screenshot: string;
+}
+
+export interface BrowserJsonInput extends BrowserRenderInput {
+  prompt?: string;
+  responseFormat?: { type: "json_schema"; schema: unknown };
+}
+
+export interface StartBrowserCrawlInput {
+  url: string;
+  [key: string]: unknown;
+}
+
+export interface BrowserCrawlSummary {
+  id: string;
+  kind: BrowserJobKind;
+  status: BrowserJobStatus;
+  inputUrl: string;
+  browserMsUsed: number;
+  resultSummary: {
+    total?: number;
+    finished?: number;
+    errored?: number;
+    cursor?: string | null;
+  } | null;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+}
+
+export interface StartBrowserCrawlResult {
+  id: string;
+  status: BrowserJobStatus;
+  providerJobId: string;
+}
+
+export interface OpenBrowserSessionInput {
+  /** Human-readable label persisted on the session record. */
+  label?: string | null;
+  /** Keep-alive duration in milliseconds. Capped server-side at 1 hour. */
+  keepAliveMs?: number;
+}
+
+export interface BrowserSessionSummary {
+  id: string;
+  organizationId: string;
+  apiTokenId: string | null;
+  status: BrowserSessionStatus;
+  label: string | null;
+  browserMsUsed: number;
+  commandCount: number;
+  keepAliveMs: number;
+  lastUsedAt: string;
+  closedAt: string | null;
+  createdAt: string;
+}
+
+export type BrowserCommand =
+  | { op: "goto"; url: string; options?: BrowserGoToOptions }
+  | {
+      op: "waitForSelector";
+      selector: string;
+      options?: { timeout?: number; visible?: boolean; hidden?: boolean };
+    }
+  | { op: "waitForNavigation"; options?: BrowserGoToOptions }
+  | { op: "waitForTimeout"; ms: number }
+  | {
+      op: "click";
+      selector: string;
+      options?: {
+        button?: "left" | "right" | "middle";
+        clickCount?: number;
+        delay?: number;
+      };
+    }
+  | {
+      op: "type";
+      selector: string;
+      text: string;
+      options?: { delay?: number };
+    }
+  | { op: "select"; selector: string; values: string[] }
+  | { op: "screenshot"; options?: BrowserScreenshotOptions }
+  | { op: "pdf"; options?: BrowserPdfOptions }
+  | { op: "content" }
+  | { op: "title" }
+  | { op: "url" }
+  | { op: "evaluate"; script: string }
+  | { op: "cookies.get"; urls?: string[] }
+  | { op: "cookies.set"; cookies: BrowserCookie[] }
+  | {
+      op: "setViewport";
+      width: number;
+      height: number;
+      deviceScaleFactor?: number;
+    }
+  | { op: "setUserAgent"; userAgent: string }
+  | { op: "setExtraHTTPHeaders"; headers: Record<string, string> };
+
+export type BrowserCommandResult = {
+  op: BrowserCommand["op"];
+  durationMs: number;
+} & ({ ok: true; result: unknown } | { ok: false; error: string });
+
+export interface RunBrowserCommandsInput {
+  commands: BrowserCommand[];
+}
+
+export interface RunBrowserCommandsResult {
+  sessionId: string;
+  results: BrowserCommandResult[];
+  totalMs: number;
+}
