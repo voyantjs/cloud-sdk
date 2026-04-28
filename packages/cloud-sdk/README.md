@@ -14,6 +14,8 @@ Public TypeScript client for Voyant Cloud APIs.
   long-running crawls and keep-alive Puppeteer sessions)
 - video (manage uploads, playback, captions, watermarks, signed playback
   tokens; create videos from a public URL)
+- search (`createSearchClientConfig` returns a Typesense client config pointed
+  at the Voyant search proxy)
 
 ## Install
 
@@ -44,6 +46,7 @@ Root groups:
 - `email`
 - `browser`
 - `video`
+- `search` (standalone `createSearchClientConfig` export, not on the client)
 
 The `vault` group covers list-vaults, list-secrets, and get-secret routes.
 
@@ -82,6 +85,49 @@ await client.browser.sessions.runCommands(session.id, {
 });
 await client.browser.sessions.close(session.id);
 ```
+
+The `search` surface is a config helper, not a wrapped client. Voyant's
+search proxy speaks the Typesense HTTP protocol, so `createSearchClientConfig`
+hands back a config you pass straight to the official `typesense` package:
+
+```ts
+import { Client } from "typesense";
+import { createSearchClientConfig } from "@voyantjs/cloud-sdk";
+
+const search = new Client(
+  createSearchClientConfig({
+    apiKey: process.env.VOYANT_API_KEY!,
+    organizationSlug: "acme",
+    projectName: "catalog",
+  }),
+);
+
+await search.collections().create({
+  name: "products",
+  fields: [
+    { name: "name", type: "string" },
+    { name: "tags", type: "string[]", facet: true },
+  ],
+});
+
+await search
+  .collections("products")
+  .documents()
+  .import([{ id: "1", name: "Sneakers", tags: ["shoes"] }], {
+    action: "upsert",
+  });
+
+const hits = await search
+  .collections("products")
+  .documents()
+  .search({ q: "sneak", query_by: "name,tags" });
+```
+
+`apiKey` is your Voyant API token (`search:read` for queries,
+`search:write` for writes). The proxy auths with `Authorization: Bearer ...`,
+substitutes the project's scoped Typesense key downstream, and rewrites
+collection names so isolation prefixes never leak into your code. `typesense`
+is a peer requirement — install it alongside the SDK if you use search.
 
 The `video` group covers the Voyant video service: `videos.{list, get,
 createUpload, createFromUrl, update, delete, enableDownload, mintToken}`,
@@ -127,6 +173,7 @@ Useful exported types include:
   `GenerateVideoCaptionInput`, `CreateVideoWatermarkInput`,
   `VideoStatus`, `VideoCaptionStatus`, `VideoDownloadStatus`,
   `VideoWatermarkPosition`
+- `SearchClientConfig`, `SearchClientConfigOptions`
 - `PhoneNumberStatus`, `SmsMessageStatus`, `VerificationChannel`,
   `VerificationAttemptStatus`, `EmailMessageStatus`,
   `BrowserSessionStatus`, `BrowserJobStatus`
@@ -141,7 +188,7 @@ Useful exported types include:
   `verification:read`, `emails:read`, `emails:send`, `browser:render`,
   `browser:scrape`, `browser:extract`, `browser:crawl`, `browser:sessions`,
   `video:read`, `video:upload`, `video:delete`, `video:captions:write`,
-  `video:watermarks:write`);
+  `video:watermarks:write`, `search:read`, `search:write`);
   requests fail with `403` if the token does not include the required scope
 
 For repo-level context, see [../../docs/cloud.md](../../docs/cloud.md).

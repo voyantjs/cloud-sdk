@@ -42,11 +42,20 @@
   "dependencies": {
     "@voyant-sdk/sdk-core": "workspace:*"
   },
+  "peerDependencies": {
+    "typesense": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typesense": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@voyant-sdk/eslint-config": "workspace:*",
     "@voyant-sdk/typescript-config": "workspace:*",
     "eslint": "^9.39.1",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "typesense": "^2.0.0"
   },
   "publishConfig": {
     "access": "public",

@@ -155,6 +155,18 @@ function verifyMarkdownExamplesTypecheck() {
       path.join(repoRoot, "packages", "cloud-sdk"),
       path.join(voyantJsDir, "cloud-sdk"),
     );
+    // Optional peer deps that show up in README snippets must be reachable
+    // for tsc resolution.
+    symlinkSync(
+      path.join(
+        repoRoot,
+        "packages",
+        "cloud-sdk",
+        "node_modules",
+        "typesense",
+      ),
+      path.join(nodeModulesDir, "typesense"),
+    );
     writeFileSync(
       path.join(tempDir, "package.json"),
       JSON.stringify(
@@ -177,6 +189,8 @@ function verifyMarkdownExamplesTypecheck() {
             noEmit: true,
             strict: true,
             target: "ES2022",
+            types: ["node"],
+            skipLibCheck: true,
           },
           include: ["*.ts"],
         },
@@ -184,6 +198,20 @@ function verifyMarkdownExamplesTypecheck() {
         2,
       ),
     );
+
+    // Some peer-dep types (typesense) reference `node:fs` etc.; expose
+    // @types/node from the workspace root so the temp tsc invocation can
+    // resolve them.
+    const nodeTypesSource = path.join(
+      repoRoot,
+      "node_modules",
+      "@types",
+      "node",
+    );
+    if (fs.existsSync(nodeTypesSource)) {
+      mkdirSync(path.join(nodeModulesDir, "@types"), { recursive: true });
+      symlinkSync(nodeTypesSource, path.join(nodeModulesDir, "@types", "node"));
+    }
 
     const snippetSources = [
       "packages/cloud-sdk/README.md",

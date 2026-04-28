@@ -1,4 +1,9 @@
 export { createVoyantCloudClient, VoyantCloudClient } from "./client.js";
+export { createSearchClientConfig } from "./search.js";
+export type {
+  SearchClientConfig,
+  SearchClientConfigOptions,
+} from "./search.js";
 export type {
   BrowserCommand,
   BrowserCommandResult,
