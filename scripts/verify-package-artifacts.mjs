@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
@@ -8,6 +8,13 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 const packDir = mkdtempSync(path.join(tmpdir(), "voyant-sdk-pack-"));
+
+const sdkCoreVersion = JSON.parse(
+  readFileSync(
+    path.join(repoRoot, "packages", "sdk-core", "package.json"),
+    "utf8",
+  ),
+).version;
 
 const packages = [
   {
@@ -285,7 +292,7 @@ try {
     assert.equal(manifest.exports?.["."].types, "./dist/index.d.ts");
 
     assert.deepEqual(manifest.bundleDependencies, ["@voyant-sdk/sdk-core"]);
-    assert.equal(manifest.dependencies?.["@voyant-sdk/sdk-core"], "0.1.0");
+    assert.equal(manifest.dependencies?.["@voyant-sdk/sdk-core"], sdkCoreVersion);
 
     assert.ok(files.includes("package/README.md"));
     assert.ok(files.includes("package/package.json"));
