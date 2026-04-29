@@ -1,4 +1,10 @@
 export { createVoyantCloudClient, VoyantCloudClient } from "./client.js";
+export {
+  getVoyantCloudClient,
+  tryGetVoyantCloudClient,
+  VoyantCloudConfigError,
+} from "./env.js";
+export type { VoyantCloudEnv } from "./env.js";
 export { createSearchClientConfig } from "./search.js";
 export type {
   SearchClientConfig,

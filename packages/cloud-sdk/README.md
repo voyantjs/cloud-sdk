@@ -36,6 +36,39 @@ const vaults = await client.vault.listVaults();
 const phoneNumbers = await client.sms.listPhoneNumbers();
 ```
 
+### From env / worker bindings
+
+`getVoyantCloudClient` reads `VOYANT_CLOUD_API_KEY` (and optionally
+`VOYANT_CLOUD_API_URL`, `VOYANT_CLOUD_USER_AGENT`) from a bindings/env
+object and constructs a client. It throws a typed `VoyantCloudConfigError`
+when the key is missing.
+
+```ts
+import { getVoyantCloudClient } from "@voyantjs/cloud-sdk";
+
+// Cloudflare Worker
+export default {
+  async fetch(_req: Request, env: VoyantCloudEnv) {
+    const cloud = getVoyantCloudClient(env);
+    return Response.json(await cloud.vault.listVaults());
+  },
+};
+
+// Node
+const cloud = getVoyantCloudClient(process.env);
+```
+
+`overrides` win over env values, except an empty-string override is
+treated as missing so it can't silently clobber a valid env value:
+
+```ts
+const cloud = getVoyantCloudClient(env, { apiKey: tenantKey });
+```
+
+For paths that legitimately operate without cloud (local dev tooling that
+doesn't send mail, etc.), use `tryGetVoyantCloudClient` — it returns
+`null` instead of throwing when the key is unset.
+
 ## Shape
 
 Root groups:
