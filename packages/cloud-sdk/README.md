@@ -44,7 +44,7 @@ object and constructs a client. It throws a typed `VoyantCloudConfigError`
 when the key is missing.
 
 ```ts
-import { getVoyantCloudClient } from "@voyantjs/cloud-sdk";
+import { getVoyantCloudClient, type VoyantCloudEnv } from "@voyantjs/cloud-sdk";
 
 // Cloudflare Worker
 export default {
@@ -53,15 +53,25 @@ export default {
     return Response.json(await cloud.vault.listVaults());
   },
 };
+```
+
+```ts
+import { getVoyantCloudClient } from "@voyantjs/cloud-sdk";
 
 // Node
 const cloud = getVoyantCloudClient(process.env);
+const vaults = await cloud.vault.listVaults();
 ```
 
 `overrides` win over env values, except an empty-string override is
 treated as missing so it can't silently clobber a valid env value:
 
 ```ts
+import { getVoyantCloudClient, type VoyantCloudEnv } from "@voyantjs/cloud-sdk";
+
+declare const env: VoyantCloudEnv;
+declare const tenantKey: string;
+
 const cloud = getVoyantCloudClient(env, { apiKey: tenantKey });
 ```
 
