@@ -124,6 +124,37 @@ test("VoyantTransport surfaces errors for binary requests", async () => {
   );
 });
 
+test("VoyantTransport binds the global fetch so workerd doesn't reject `this`", async () => {
+  // Cloudflare Workers (workerd) throws `TypeError: Illegal invocation` when
+  // the global `fetch` is called with a receiver other than `globalThis`.
+  // Reproduce that by stubbing `globalThis.fetch` with a function that asserts
+  // its `this` binding, then construct a transport without an explicit `fetch`
+  // override.
+  const originalFetch = globalThis.fetch;
+  let observedThis;
+  globalThis.fetch = function stubFetch() {
+    observedThis = this;
+    if (this !== globalThis) {
+      throw new TypeError(
+        "Illegal invocation: function called with incorrect `this` reference.",
+      );
+    }
+    return new Response(JSON.stringify({ data: { ok: true } }), {
+      headers: { "content-type": "application/json" },
+      status: 200,
+    });
+  };
+
+  try {
+    const transport = new VoyantTransport({ apiKey: "test_key" });
+    const result = await transport.request("/v1/example");
+    assert.deepEqual(result, { ok: true });
+    assert.equal(observedThis, globalThis);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("VoyantTransport throws VoyantApiError for non-2xx responses", async () => {
   const transport = new VoyantTransport({
     apiKey: "test_key",
