@@ -72,6 +72,16 @@ export class VoyantCloudClient {
         `/vault/v1/${vaultSlug}/secrets`,
       ),
     listVaults: () => this.transport.request<VaultSummary[]>("/vault/v1"),
+    setSecret: (vaultSlug: string, key: string, value: string) =>
+      this.transport.request<VaultSecretSummary>(
+        `/vault/v1/${vaultSlug}/secrets/${key}`,
+        { method: "POST", body: { value } },
+      ),
+    deleteSecret: (vaultSlug: string, key: string) =>
+      this.transport.request<void>(
+        `/vault/v1/${vaultSlug}/secrets/${key}`,
+        { method: "DELETE" },
+      ),
   };
 
   readonly sms = {
