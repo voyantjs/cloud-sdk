@@ -43,7 +43,7 @@
     "@voyant-sdk/sdk-core": "workspace:*"
   },
   "peerDependencies": {
-    "typesense": "^2.0.0"
+    "typesense": ">=2.0.0 <4.0.0"
   },
   "peerDependenciesMeta": {
     "typesense": {
@@ -55,7 +55,7 @@
     "@voyant-sdk/typescript-config": "workspace:*",
     "eslint": "^9.39.1",
     "typescript": "5.9.2",
-    "typesense": "^2.0.0"
+    "typesense": "^3.0.6"
   },
   "publishConfig": {
     "access": "public",
