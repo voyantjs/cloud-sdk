@@ -304,7 +304,7 @@ await client.extensions.publishVersion("trip-panel", {
     version: "1.0.0",
     extensionApi: "2026-07-01",
     entry: "dist/index.js",
-    targets: [{ slot: "trip.sidebar" }],
+    targets: [{ slot: "dashboard.after-kpis" }],
   },
   bundle,
 });
@@ -343,8 +343,8 @@ Useful exported types include:
   `RealtimeChannelPresenceEvent`, `RealtimeChannelError`,
   `RealtimeChannelConnectedEvent`, `RealtimeChannelDisconnectedEvent`,
   `RealtimePresenceAction`
-- `CloudExtension`, `CloudExtensionVersion`, `CloudExtensionInstall`,
-  `CloudExtensionInstallDescriptor`, `CloudExtensionManifest`
+- `CloudExtension`, `CloudExtensionVersion`, `CloudExtensionDescriptor`,
+  `CloudExtensionManifest`
 - `SearchClientConfig`, `SearchClientConfigOptions`
 - `PhoneNumberStatus`, `SmsMessageStatus`, `VerificationChannel`,
   `VerificationAttemptStatus`, `EmailMessageStatus`,
@@ -361,8 +361,8 @@ Useful exported types include:
   `verification:read`, `emails:read`, `emails:send`, `browser:render`,
   `browser:scrape`, `browser:extract`, `browser:crawl`, `browser:sessions`,
   `video:read`, `video:upload`, `video:delete`, `video:captions:write`,
-  `video:watermarks:write`, `extensions:read`, `extensions:write`,
-  `extensions:install`, `search:read`, `search:write`);
+  `video:watermarks:write`, `apps:read`, `apps:write`, `search:read`,
+  `search:write`);
   requests fail with `403` if the token does not include the required scope
 
 For repo-level context, see [../../docs/cloud.md](../../docs/cloud.md).

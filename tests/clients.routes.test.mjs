@@ -720,7 +720,7 @@ test("cloud client composes extension routes correctly", async () => {
     version: "1.0.0",
     extensionApi: "2026-07-01",
     entry: "dist/index.js",
-    targets: [{ slot: "trip.sidebar" }],
+    targets: [{ slot: "dashboard.after-kpis" }],
   };
   const bundle = new Uint8Array([31, 139, 8, 0]);
 
@@ -736,7 +736,10 @@ test("cloud client composes extension routes correctly", async () => {
     displayName: "Trip Tools",
     visibility: "unlisted",
   });
-  await client.extensions.install("trip-panel", { version: "1.0.0" });
+  await client.extensions.install("trip-panel", {
+    version: "1.0.0",
+    config: { color: "green" },
+  });
   await client.extensions.updateInstall("trip-panel", {
     enabled: false,
     config: { color: "blue" },
@@ -799,7 +802,10 @@ test("cloud client composes extension routes correctly", async () => {
     "https://api.voyant.travel/cloud/v1/extensions/trip-panel/install",
   );
   assert.equal(recorder.calls[5].method, "POST");
-  assert.deepEqual(JSON.parse(recorder.calls[5].body), { version: "1.0.0" });
+  assert.deepEqual(JSON.parse(recorder.calls[5].body), {
+    version: "1.0.0",
+    config: { color: "green" },
+  });
 
   assert.equal(
     recorder.calls[6].url,
@@ -823,6 +829,72 @@ test("cloud client composes extension routes correctly", async () => {
     "https://api.voyant.travel/cloud/v1/extension-installs",
   );
   assert.equal(recorder.calls[8].method, "GET");
+});
+
+test("cloud client returns extension server response shapes", async () => {
+  const extension = {
+    key: "trip-panel",
+    displayName: "Trip Panel",
+    description: null,
+    visibility: "listed",
+    sourceOrganizationId: "org_source",
+    installed: true,
+    createdAt: "2026-07-01T00:00:00.000Z",
+    updatedAt: "2026-07-02T00:00:00.000Z",
+    versions: [
+      {
+        version: "1.0.0",
+        extensionApi: "2026-07-01",
+        entry: "dist/index.js",
+        slots: ["dashboard.after-kpis"],
+        bundleHash: "sha256:abc",
+        bundleBytes: 1234,
+        createdAt: "2026-07-01T00:00:00.000Z",
+        configSchema: { type: "object" },
+      },
+    ],
+  };
+  const descriptor = {
+    key: "trip-panel",
+    version: "1.0.0",
+    displayName: "Trip Panel",
+    extensionApi: "2026-07-01",
+    entryUrl:
+      "https://api.voyant.travel/cloud/v1/extension-bundles/trip-panel/1.0.0/dist/index.js",
+    slots: ["dashboard.after-kpis"],
+    config: { color: "green" },
+  };
+  const client = createVoyantCloudClient({
+    apiKey: "extension_key",
+    fetch: async (url, init) => {
+      const pathname = new URL(String(url)).pathname;
+      const data =
+        pathname.endsWith("/install") &&
+        (init?.method === "POST" || init?.method === "PATCH")
+          ? descriptor
+          : extension;
+      return new Response(JSON.stringify({ data }), {
+        headers: { "content-type": "application/json" },
+        status: 200,
+      });
+    },
+  });
+
+  assert.deepEqual(await client.extensions.get("trip-panel"), extension);
+  assert.deepEqual(
+    await client.extensions.install("trip-panel", {
+      version: "1.0.0",
+      config: { color: "green" },
+    }),
+    descriptor,
+  );
+  assert.deepEqual(
+    await client.extensions.updateInstall("trip-panel", {
+      version: "1.0.0",
+      config: { color: "green" },
+    }),
+    descriptor,
+  );
 });
 
 test("cloud client surfaces extension error envelopes", async () => {

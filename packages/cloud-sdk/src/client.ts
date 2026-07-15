@@ -11,8 +11,7 @@ import type {
   CloudDeployment,
   CloudDeploymentLogsPage,
   CloudExtension,
-  CloudExtensionInstall,
-  CloudExtensionInstallDescriptor,
+  CloudExtensionDescriptor,
   CloudExtensionListFilter,
   CloudExtensionVersion,
   CloudRuntimeLogsPage,
@@ -722,7 +721,7 @@ export class VoyantCloudClient {
         method: "PATCH",
       }),
     install: (key: string, input: InstallCloudExtensionInput = {}) =>
-      this.transport.request<CloudExtensionInstall>(
+      this.transport.request<CloudExtensionDescriptor>(
         `/cloud/v1/extensions/${key}/install`,
         {
           body: input,
@@ -730,7 +729,7 @@ export class VoyantCloudClient {
         },
       ),
     updateInstall: (key: string, input: UpdateCloudExtensionInstallInput) =>
-      this.transport.request<CloudExtensionInstall>(
+      this.transport.request<CloudExtensionDescriptor>(
         `/cloud/v1/extensions/${key}/install`,
         {
           body: input,
@@ -743,7 +742,7 @@ export class VoyantCloudClient {
         responseType: "text",
       }),
     listInstalls: () =>
-      this.transport.request<CloudExtensionInstallDescriptor[]>(
+      this.transport.request<CloudExtensionDescriptor[]>(
         "/cloud/v1/extension-installs",
       ),
   };

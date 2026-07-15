@@ -908,7 +908,7 @@ export interface CreateCloudStorageBucketInput {
   jurisdiction?: "default" | "eu" | "fedramp" | null;
 }
 
-export type CloudExtensionVisibility = "private" | "unlisted";
+export type CloudExtensionVisibility = "private" | "unlisted" | "listed";
 
 export type CloudExtensionListFilter = "listed" | "installed" | "mine";
 
@@ -929,11 +929,14 @@ export interface CloudExtensionManifest {
 }
 
 export interface CloudExtensionVersion {
-  id: string;
-  key: string;
   version: string;
-  manifest: CloudExtensionManifest;
+  extensionApi: string;
+  entry: string;
+  slots: string[];
+  bundleHash: string;
+  bundleBytes: number;
   createdAt: string;
+  configSchema: Record<string, unknown> | null;
 }
 
 export interface CloudExtension {
@@ -941,29 +944,21 @@ export interface CloudExtension {
   displayName: string;
   description: string | null;
   visibility: CloudExtensionVisibility;
+  sourceOrganizationId: string;
+  installed: boolean;
   versions?: CloudExtensionVersion[];
   createdAt: string;
   updatedAt: string;
 }
 
-export interface CloudExtensionInstallDescriptor {
+export interface CloudExtensionDescriptor {
   key: string;
   version: string;
   displayName: string;
   extensionApi: string;
   entryUrl: string;
   slots: string[];
-  config?: unknown;
-}
-
-export interface CloudExtensionInstall {
-  key: string;
-  version: string;
-  enabled: boolean;
-  config?: unknown;
-  descriptor?: CloudExtensionInstallDescriptor;
-  installedAt?: string;
-  updatedAt?: string;
+  config?: Record<string, unknown>;
 }
 
 export interface CreateCloudExtensionInput {
@@ -980,11 +975,12 @@ export interface PublishCloudExtensionVersionInput {
 export interface UpdateCloudExtensionInput {
   displayName?: string;
   description?: string | null;
-  visibility?: CloudExtensionVisibility;
+  visibility?: "private" | "unlisted";
 }
 
 export interface InstallCloudExtensionInput {
   version?: string;
+  config?: unknown;
 }
 
 export interface UpdateCloudExtensionInstallInput {

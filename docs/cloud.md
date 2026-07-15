@@ -52,9 +52,8 @@
   `RealtimeChannelConnectedEvent`, `RealtimeChannelDisconnectedEvent`,
   `RealtimePresenceAction`
 - extensions: `CloudExtension`, `CloudExtensionVersion`,
-  `CloudExtensionInstall`, `CloudExtensionInstallDescriptor`,
-  `CloudExtensionManifest`, `CloudExtensionVisibility`,
-  `CloudExtensionListFilter`
+  `CloudExtensionDescriptor`, `CloudExtensionManifest`,
+  `CloudExtensionVisibility`, `CloudExtensionListFilter`
 
 ## Auth scopes
 
@@ -90,10 +89,9 @@ API tokens are scoped. The required scopes per group:
 - `realtime.history` and `realtime.presence.get` require `realtime:subscribe`
 - `realtime.tokens.mint` requires `realtime:tokens` (the minted client token
   itself — not the API key — authenticates `RealtimeChannel` connections)
-- `extensions.{list, get, listInstalls}` require `extensions:read`
-- `extensions.{create, publishVersion, update}` require `extensions:write`
-- `extensions.{install, updateInstall, uninstall}` require
-  `extensions:install`
+- `extensions.{list, get, listInstalls}` require `apps:read`
+- `extensions.{create, publishVersion, update, install, updateInstall, uninstall}`
+  require `apps:write`
 
 ## Example
 
@@ -154,7 +152,7 @@ await client.extensions.publishVersion("trip-panel", {
     version: "1.0.0",
     extensionApi: "2026-07-01",
     entry: "dist/index.js",
-    targets: [{ slot: "trip.sidebar" }],
+    targets: [{ slot: "dashboard.after-kpis" }],
   },
   bundle: new Uint8Array(),
 });
