@@ -19,6 +19,21 @@ const sources = [
       "apps/api/src/routes/cloud-control-plane.ts",
     ),
     pathPrefix: "/cloud/v1",
+    excludeRoutes: new Set([
+      "GET /cloud/v1/voyant",
+      "POST /cloud/v1/voyant",
+    ]),
+  },
+  {
+    file: path.join(
+      voyantCloudRepo,
+      "apps/api/src/routes/cloud-api/extensions.ts",
+    ),
+    pathPrefix: "/cloud/v1",
+    excludeRoutes: new Set([
+      "GET /cloud/v1/admin-runtime/ui-extensions",
+      "GET /cloud/v1/extension-bundles/:key/:version/*",
+    ]),
   },
   {
     file: path.join(voyantCloudRepo, "apps/api/src/routes/sms.ts"),
@@ -46,6 +61,7 @@ const sources = [
       "apps/browser-api/src/lib/operation.ts",
     ),
     pathPrefix: "/browser",
+    excludeRoutes: new Set(["POST /browser/v1/search"]),
   },
   // The realtime surface is implemented in the voyant-realtime-api worker
   // (apps/realtime-api/src/app.ts) and the public api gateway forwards
@@ -132,14 +148,18 @@ const activeSources = sources.filter((source) => {
 
 const cloudRoutes = activeSources
   .flatMap((source) => {
+    let routes;
     if (source.operationsFile) {
-      return extractBrowserRoutes(
+      routes = extractBrowserRoutes(
         source.file,
         source.operationsFile,
         source.pathPrefix,
       );
+    } else {
+      routes = extractRoutes(source.file, source.pathPrefix);
     }
-    return extractRoutes(source.file, source.pathPrefix);
+    if (!source.excludeRoutes) return routes;
+    return routes.filter((route) => !source.excludeRoutes.has(route));
   })
   .filter((route) => !/\s\/[^/\s]+\/health$/.test(route))
   .sort();

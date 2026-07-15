@@ -15,6 +15,10 @@ const cloudControlPlaneRoutesFile = path.join(
   voyantCloudRepo,
   "apps/api/src/routes/cloud-control-plane.ts",
 );
+const cloudExtensionsRoutesFile = path.join(
+  voyantCloudRepo,
+  "apps/api/src/routes/cloud-api/extensions.ts",
+);
 const smsRoutesFile = path.join(voyantCloudRepo, "apps/api/src/routes/sms.ts");
 const emailRoutesFile = path.join(
   voyantCloudRepo,
@@ -110,6 +114,7 @@ const requiredFiles = [
   manifestFile,
   vaultRoutesFile,
   cloudControlPlaneRoutesFile,
+  cloudExtensionsRoutesFile,
   smsRoutesFile,
   emailRoutesFile,
   verifyRoutesFile,
@@ -130,12 +135,18 @@ const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
 const actualCloudRoutes = new Set([
   ...extractRoutes(vaultRoutesFile, "/vault/v1"),
   ...extractRoutes(cloudControlPlaneRoutesFile, "/cloud/v1"),
+  ...extractRoutes(cloudExtensionsRoutesFile, "/cloud/v1"),
   ...extractRoutes(smsRoutesFile, "/sms/v1"),
   ...extractRoutes(emailRoutesFile, "/email/v1"),
   ...extractRoutes(verifyRoutesFile, "/verify/v1"),
   ...extractRoutes(videoRoutesFile, "/video/v1"),
   ...extractBrowserRoutes(browserAppFile, browserOperationsFile, "/browser"),
 ]);
+actualCloudRoutes.delete("GET /cloud/v1/admin-runtime/ui-extensions");
+actualCloudRoutes.delete("GET /cloud/v1/extension-bundles/:key/:version/*");
+actualCloudRoutes.delete("GET /cloud/v1/voyant");
+actualCloudRoutes.delete("POST /browser/v1/search");
+actualCloudRoutes.delete("POST /cloud/v1/voyant");
 
 // The realtime surface lives in the voyant-realtime-api worker. Until that
 // worker lands in voyant-cloud, skip parity for /realtime/* only (instead

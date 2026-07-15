@@ -16,6 +16,8 @@ Public TypeScript client for Voyant Cloud APIs.
   tokens; create videos from a public URL)
 - realtime (publish messages, read history and presence, mint client tokens;
   `RealtimeChannel` subscribes over WebSocket)
+- extensions (create, publish, list, update, install, configure, and resolve
+  UI extensions)
 - search (`createSearchClientConfig` returns a Typesense client config pointed
   at the Voyant search proxy)
 
@@ -46,7 +48,10 @@ object and constructs a client. It throws a typed `VoyantCloudConfigError`
 when the key is missing.
 
 ```ts
-import { getVoyantCloudClient, type VoyantCloudEnv } from "@voyant-travel/cloud-sdk";
+import {
+  getVoyantCloudClient,
+  type VoyantCloudEnv,
+} from "@voyant-travel/cloud-sdk";
 
 // Cloudflare Worker
 export default {
@@ -69,7 +74,10 @@ const vaults = await cloud.vault.listVaults();
 treated as missing so it can't silently clobber a valid env value:
 
 ```ts
-import { getVoyantCloudClient, type VoyantCloudEnv } from "@voyant-travel/cloud-sdk";
+import {
+  getVoyantCloudClient,
+  type VoyantCloudEnv,
+} from "@voyant-travel/cloud-sdk";
 
 declare const env: VoyantCloudEnv;
 declare const tenantKey: string;
@@ -92,6 +100,7 @@ Root groups:
 - `browser`
 - `video`
 - `realtime` (plus the standalone `RealtimeChannel` subscriber client)
+- `extensions`
 - `search` (standalone `createSearchClientConfig` export, not on the client)
 
 The `vault` group covers list-vaults, list-secrets, and get-secret routes,
@@ -236,7 +245,10 @@ workers, Node 21+; injectable via the `webSocket` option), replays missed
 messages on reconnect via `sinceId`, and rejects sends while disconnected.
 
 ```ts
-import { createVoyantCloudClient, RealtimeChannel } from "@voyant-travel/cloud-sdk";
+import {
+  createVoyantCloudClient,
+  RealtimeChannel,
+} from "@voyant-travel/cloud-sdk";
 
 const client = createVoyantCloudClient({
   apiKey: process.env.VOYANT_API_KEY!,
@@ -261,6 +273,44 @@ channel.enterPresence({ name: "Alice" });
 // ...later
 off();
 channel.close();
+```
+
+The `extensions` group covers Voyant UI extensions:
+`create(input)`, `publishVersion(key, { manifest, bundle })`,
+`list(filter?)`, `get(key)`, `update(key, patch)`, `install(key, opts?)`,
+`updateInstall(key, patch)`, `uninstall(key)`, and `listInstalls()`.
+`publishVersion` sends the manifest JSON and gzipped tarball bundle as
+multipart form data.
+
+```ts
+import { createVoyantCloudClient } from "@voyant-travel/cloud-sdk";
+
+declare const bundle: Uint8Array;
+
+const client = createVoyantCloudClient({
+  apiKey: process.env.VOYANT_API_KEY!,
+});
+
+await client.extensions.create({
+  key: "trip-panel",
+  displayName: "Trip Panel",
+});
+
+await client.extensions.publishVersion("trip-panel", {
+  manifest: {
+    schemaVersion: "voyant.extension-manifest.v1",
+    key: "trip-panel",
+    displayName: "Trip Panel",
+    version: "1.0.0",
+    extensionApi: "2026-07-01",
+    entry: "dist/index.js",
+    targets: [{ slot: "dashboard.after-kpis" }],
+  },
+  bundle,
+});
+
+await client.extensions.install("trip-panel", { version: "1.0.0" });
+const installs = await client.extensions.listInstalls();
 ```
 
 ## Key public types
@@ -293,10 +343,13 @@ Useful exported types include:
   `RealtimeChannelPresenceEvent`, `RealtimeChannelError`,
   `RealtimeChannelConnectedEvent`, `RealtimeChannelDisconnectedEvent`,
   `RealtimePresenceAction`
+- `CloudExtension`, `CloudExtensionVersion`, `CloudExtensionDescriptor`,
+  `CloudExtensionManifest`
 - `SearchClientConfig`, `SearchClientConfigOptions`
 - `PhoneNumberStatus`, `SmsMessageStatus`, `VerificationChannel`,
   `VerificationAttemptStatus`, `EmailMessageStatus`,
   `BrowserSessionStatus`, `BrowserJobStatus`
+- `CloudExtensionVisibility`, `CloudExtensionListFilter`
 
 ## Notes
 
@@ -308,7 +361,8 @@ Useful exported types include:
   `verification:read`, `emails:read`, `emails:send`, `browser:render`,
   `browser:scrape`, `browser:extract`, `browser:crawl`, `browser:sessions`,
   `video:read`, `video:upload`, `video:delete`, `video:captions:write`,
-  `video:watermarks:write`, `search:read`, `search:write`);
+  `video:watermarks:write`, `apps:read`, `apps:write`, `search:read`,
+  `search:write`);
   requests fail with `403` if the token does not include the required scope
 
 For repo-level context, see [../../docs/cloud.md](../../docs/cloud.md).

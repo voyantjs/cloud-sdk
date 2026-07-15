@@ -10,6 +10,10 @@ import type {
   CloudDatabaseRole,
   CloudDeployment,
   CloudDeploymentLogsPage,
+  CloudExtension,
+  CloudExtensionDescriptor,
+  CloudExtensionListFilter,
+  CloudExtensionVersion,
   CloudRuntimeLogsPage,
   CloudStorageBucket,
   CreateCloudAppEnvironmentInput,
@@ -18,11 +22,16 @@ import type {
   CreateCloudDatabaseBranchInput,
   CreateCloudDatabaseInput,
   CreateCloudDeploymentInput,
+  CreateCloudExtensionInput,
   CreateCloudStorageBucketInput,
+  InstallCloudExtensionInput,
   ListCloudRuntimeLogsQuery,
+  PublishCloudExtensionVersionInput,
   UpdateCloudAppEnvironmentInput,
   UpdateCloudAppEnvVarInput,
   UpdateCloudAppInput,
+  UpdateCloudExtensionInput,
+  UpdateCloudExtensionInstallInput,
 } from "./types.js";
 import type {
   BrowserCrawlSummary,
@@ -95,6 +104,25 @@ function unwrapBrowserResult<T>(
     return envelope.result as T;
   }
   return envelope as unknown as T;
+}
+
+function createExtensionVersionForm(input: PublishCloudExtensionVersionInput) {
+  const form = new FormData();
+  const bundle =
+    input.bundle instanceof Blob
+      ? input.bundle
+      : new Blob([copyUint8ArrayToArrayBuffer(input.bundle)], {
+          type: "application/gzip",
+        });
+  form.append("manifest", JSON.stringify(input.manifest));
+  form.append("bundle", bundle, "bundle.tar.gz");
+  return form;
+}
+
+function copyUint8ArrayToArrayBuffer(bytes: Uint8Array) {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return buffer;
 }
 
 export class VoyantCloudClient {
@@ -663,6 +691,60 @@ export class VoyantCloudClient {
           responseType: "text",
         }),
     },
+  };
+
+  /** Control plane: UI extensions and organization installs. */
+  readonly extensions = {
+    create: (input: CreateCloudExtensionInput) =>
+      this.transport.request<CloudExtension>("/cloud/v1/extensions", {
+        body: input,
+        method: "POST",
+      }),
+    publishVersion: (key: string, input: PublishCloudExtensionVersionInput) =>
+      this.transport.request<CloudExtensionVersion>(
+        `/cloud/v1/extensions/${key}/versions`,
+        {
+          body: createExtensionVersionForm(input),
+          method: "POST",
+        },
+      ),
+    list: (filter?: CloudExtensionListFilter) =>
+      this.transport.request<CloudExtension[]>(
+        "/cloud/v1/extensions",
+        filter ? { query: { filter } } : undefined,
+      ),
+    get: (key: string) =>
+      this.transport.request<CloudExtension>(`/cloud/v1/extensions/${key}`),
+    update: (key: string, input: UpdateCloudExtensionInput) =>
+      this.transport.request<CloudExtension>(`/cloud/v1/extensions/${key}`, {
+        body: input,
+        method: "PATCH",
+      }),
+    install: (key: string, input: InstallCloudExtensionInput = {}) =>
+      this.transport.request<CloudExtensionDescriptor>(
+        `/cloud/v1/extensions/${key}/install`,
+        {
+          body: input,
+          method: "POST",
+        },
+      ),
+    updateInstall: (key: string, input: UpdateCloudExtensionInstallInput) =>
+      this.transport.request<CloudExtensionDescriptor>(
+        `/cloud/v1/extensions/${key}/install`,
+        {
+          body: input,
+          method: "PATCH",
+        },
+      ),
+    uninstall: (key: string) =>
+      this.transport.request<null>(`/cloud/v1/extensions/${key}/install`, {
+        method: "DELETE",
+        responseType: "text",
+      }),
+    listInstalls: () =>
+      this.transport.request<CloudExtensionDescriptor[]>(
+        "/cloud/v1/extension-installs",
+      ),
   };
 }
 
