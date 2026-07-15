@@ -1,5 +1,11 @@
 # @voyant-travel/cloud-sdk
 
+## 0.12.0
+
+### Minor Changes
+
+- 47ad70d: Add the `extensions` namespace for Voyant UI extension publishing and installs.
+
 ## 0.11.0
 
 ### Minor Changes
