@@ -18,6 +18,8 @@
   channel history and presence, and minting short-lived client tokens
 - `RealtimeChannel` standalone WebSocket subscriber client (token-based
   auth, auto-reconnect with `sinceId` resume)
+- `extensions` group for creating, publishing, listing, updating, installing,
+  configuring, and resolving UI extensions
 
 ## Key public types
 
@@ -49,6 +51,10 @@
   `RealtimeChannelPresenceEvent`, `RealtimeChannelError`,
   `RealtimeChannelConnectedEvent`, `RealtimeChannelDisconnectedEvent`,
   `RealtimePresenceAction`
+- extensions: `CloudExtension`, `CloudExtensionVersion`,
+  `CloudExtensionInstall`, `CloudExtensionInstallDescriptor`,
+  `CloudExtensionManifest`, `CloudExtensionVisibility`,
+  `CloudExtensionListFilter`
 
 ## Auth scopes
 
@@ -84,11 +90,18 @@ API tokens are scoped. The required scopes per group:
 - `realtime.history` and `realtime.presence.get` require `realtime:subscribe`
 - `realtime.tokens.mint` requires `realtime:tokens` (the minted client token
   itself — not the API key — authenticates `RealtimeChannel` connections)
+- `extensions.{list, get, listInstalls}` require `extensions:read`
+- `extensions.{create, publishVersion, update}` require `extensions:write`
+- `extensions.{install, updateInstall, uninstall}` require
+  `extensions:install`
 
 ## Example
 
 ```ts
-import { createVoyantCloudClient, RealtimeChannel } from "@voyant-travel/cloud-sdk";
+import {
+  createVoyantCloudClient,
+  RealtimeChannel,
+} from "@voyant-travel/cloud-sdk";
 
 declare const file: File;
 
@@ -128,4 +141,22 @@ const { token } = await client.realtime.tokens.mint({
 });
 const channel = new RealtimeChannel({ channel: "orders:eu", token });
 channel.on("message", (message) => console.log(message.event, message.data));
+
+await client.extensions.create({
+  key: "trip-panel",
+  displayName: "Trip Panel",
+});
+await client.extensions.publishVersion("trip-panel", {
+  manifest: {
+    schemaVersion: "voyant.extension-manifest.v1",
+    key: "trip-panel",
+    displayName: "Trip Panel",
+    version: "1.0.0",
+    extensionApi: "2026-07-01",
+    entry: "dist/index.js",
+    targets: [{ slot: "trip.sidebar" }],
+  },
+  bundle: new Uint8Array(),
+});
+await client.extensions.install("trip-panel", { version: "1.0.0" });
 ```

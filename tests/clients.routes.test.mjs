@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createVoyantCloudClient } from "../packages/cloud-sdk/dist/index.js";
+import {
+  createVoyantCloudClient,
+  VoyantApiError,
+} from "../packages/cloud-sdk/dist/index.js";
 
 function createRecorder({ responseBody = { data: [] } } = {}) {
   const calls = [];
@@ -701,5 +704,155 @@ test("cloud client composes control-plane routes correctly", async () => {
   assert.equal(
     recorder.calls[7].url,
     "https://api.voyant.travel/cloud/v1/storage/buckets",
+  );
+});
+
+test("cloud client composes extension routes correctly", async () => {
+  const recorder = createRecorder({ responseBody: { data: [] } });
+  const client = createVoyantCloudClient({
+    apiKey: "extension_key",
+    fetch: recorder.fetch,
+  });
+  const manifest = {
+    schemaVersion: "voyant.extension-manifest.v1",
+    key: "trip-panel",
+    displayName: "Trip Panel",
+    version: "1.0.0",
+    extensionApi: "2026-07-01",
+    entry: "dist/index.js",
+    targets: [{ slot: "trip.sidebar" }],
+  };
+  const bundle = new Uint8Array([31, 139, 8, 0]);
+
+  await client.extensions.create({
+    key: "trip-panel",
+    displayName: "Trip Panel",
+    description: "Sidebar tools",
+  });
+  await client.extensions.publishVersion("trip-panel", { manifest, bundle });
+  await client.extensions.list("mine");
+  await client.extensions.get("trip-panel");
+  await client.extensions.update("trip-panel", {
+    displayName: "Trip Tools",
+    visibility: "unlisted",
+  });
+  await client.extensions.install("trip-panel", { version: "1.0.0" });
+  await client.extensions.updateInstall("trip-panel", {
+    enabled: false,
+    config: { color: "blue" },
+    version: "1.0.1",
+  });
+  await client.extensions.uninstall("trip-panel");
+  await client.extensions.listInstalls();
+
+  assert.equal(
+    recorder.calls[0].url,
+    "https://api.voyant.travel/cloud/v1/extensions",
+  );
+  assert.equal(recorder.calls[0].method, "POST");
+  assert.equal(
+    recorder.calls[0].headers.get("authorization"),
+    "Bearer extension_key",
+  );
+  assert.deepEqual(JSON.parse(recorder.calls[0].body), {
+    key: "trip-panel",
+    displayName: "Trip Panel",
+    description: "Sidebar tools",
+  });
+
+  assert.equal(
+    recorder.calls[1].url,
+    "https://api.voyant.travel/cloud/v1/extensions/trip-panel/versions",
+  );
+  assert.equal(recorder.calls[1].method, "POST");
+  assert.equal(recorder.calls[1].headers.get("content-type"), null);
+  assert.ok(recorder.calls[1].body instanceof FormData);
+  assert.deepEqual(JSON.parse(recorder.calls[1].body.get("manifest")), manifest);
+  const bundlePart = recorder.calls[1].body.get("bundle");
+  assert.ok(bundlePart instanceof Blob);
+  assert.deepEqual(new Uint8Array(await bundlePart.arrayBuffer()), bundle);
+
+  assert.equal(
+    recorder.calls[2].url,
+    "https://api.voyant.travel/cloud/v1/extensions?filter=mine",
+  );
+  assert.equal(recorder.calls[2].method, "GET");
+
+  assert.equal(
+    recorder.calls[3].url,
+    "https://api.voyant.travel/cloud/v1/extensions/trip-panel",
+  );
+  assert.equal(recorder.calls[3].method, "GET");
+
+  assert.equal(
+    recorder.calls[4].url,
+    "https://api.voyant.travel/cloud/v1/extensions/trip-panel",
+  );
+  assert.equal(recorder.calls[4].method, "PATCH");
+  assert.deepEqual(JSON.parse(recorder.calls[4].body), {
+    displayName: "Trip Tools",
+    visibility: "unlisted",
+  });
+
+  assert.equal(
+    recorder.calls[5].url,
+    "https://api.voyant.travel/cloud/v1/extensions/trip-panel/install",
+  );
+  assert.equal(recorder.calls[5].method, "POST");
+  assert.deepEqual(JSON.parse(recorder.calls[5].body), { version: "1.0.0" });
+
+  assert.equal(
+    recorder.calls[6].url,
+    "https://api.voyant.travel/cloud/v1/extensions/trip-panel/install",
+  );
+  assert.equal(recorder.calls[6].method, "PATCH");
+  assert.deepEqual(JSON.parse(recorder.calls[6].body), {
+    enabled: false,
+    config: { color: "blue" },
+    version: "1.0.1",
+  });
+
+  assert.equal(
+    recorder.calls[7].url,
+    "https://api.voyant.travel/cloud/v1/extensions/trip-panel/install",
+  );
+  assert.equal(recorder.calls[7].method, "DELETE");
+
+  assert.equal(
+    recorder.calls[8].url,
+    "https://api.voyant.travel/cloud/v1/extension-installs",
+  );
+  assert.equal(recorder.calls[8].method, "GET");
+});
+
+test("cloud client surfaces extension error envelopes", async () => {
+  const client = createVoyantCloudClient({
+    apiKey: "extension_key",
+    fetch: async () =>
+      new Response(
+        JSON.stringify({
+          error: "Extension not found",
+          code: "extension_not_found",
+        }),
+        {
+          headers: {
+            "content-type": "application/json",
+            "x-request-id": "req_ext",
+          },
+          status: 404,
+        },
+      ),
+  });
+
+  await assert.rejects(
+    () => client.extensions.get("missing-extension"),
+    (error) => {
+      assert.ok(error instanceof VoyantApiError);
+      assert.equal(error.message, "Extension not found");
+      assert.equal(error.status, 404);
+      assert.equal(error.code, "extension_not_found");
+      assert.equal(error.requestId, "req_ext");
+      return true;
+    },
   );
 });

@@ -1,5 +1,9 @@
 import { VoyantApiError } from "./errors.js";
-import type { QueryParams, VoyantRequestOptions, VoyantTransportOptions } from "./types.js";
+import type {
+  QueryParams,
+  VoyantRequestOptions,
+  VoyantTransportOptions,
+} from "./types.js";
 
 const DEFAULT_BASE_URL = "https://api.voyant.travel";
 
@@ -120,12 +124,16 @@ export class VoyantTransport {
     this.defaultHeaders = options.headers;
     this.fetchImpl = options.fetch ?? fetch.bind(globalThis);
     this.authHeader = options.authHeader ?? "authorization";
-    this.authScheme = options.authScheme === undefined ? "Bearer" : options.authScheme;
+    this.authScheme =
+      options.authScheme === undefined ? "Bearer" : options.authScheme;
     this.userAgent = options.userAgent ?? "voyant-sdk";
   }
 
   async request<T>(path: string, options: VoyantRequestOptions = {}) {
-    const url = new URL(normalizePath(path), this.baseUrl.endsWith("/") ? this.baseUrl : `${this.baseUrl}/`);
+    const url = new URL(
+      normalizePath(path),
+      this.baseUrl.endsWith("/") ? this.baseUrl : `${this.baseUrl}/`,
+    );
     appendQuery(url, options.query);
 
     const headers = new Headers(this.defaultHeaders);
@@ -163,7 +171,10 @@ export class VoyantTransport {
     if (responseType === "binary") {
       if (!response.ok) {
         const text = await response.text();
-        throw toApiError(maybeJson(text, response.headers.get("content-type")), response);
+        throw toApiError(
+          maybeJson(text, response.headers.get("content-type")),
+          response,
+        );
       }
       const buffer = await response.arrayBuffer();
       return new Uint8Array(buffer) as T;
@@ -173,7 +184,10 @@ export class VoyantTransport {
 
     if (responseType === "text") {
       if (!response.ok) {
-        throw toApiError(maybeJson(text, response.headers.get("content-type")), response);
+        throw toApiError(
+          maybeJson(text, response.headers.get("content-type")),
+          response,
+        );
       }
       return text as T;
     }

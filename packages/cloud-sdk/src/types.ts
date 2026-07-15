@@ -677,7 +677,7 @@ export interface RealtimeTokenSummary {
 }
 
 // ---------------------------------------------------------------------------
-// Control plane (apps, deployments, databases, storage)
+// Control plane (apps, deployments, databases, storage, extensions)
 //
 // Mirrors the API-token routes mounted under `/cloud/v1` (see the platform
 // repo's `routes/cloud-control-plane.ts`). Organization is resolved from the
@@ -906,6 +906,91 @@ export interface CreateCloudStorageBucketInput {
   name: string;
   locationHint?: string | null;
   jurisdiction?: "default" | "eu" | "fedramp" | null;
+}
+
+export type CloudExtensionVisibility = "private" | "unlisted";
+
+export type CloudExtensionListFilter = "listed" | "installed" | "mine";
+
+export interface CloudExtensionManifestTarget {
+  slot: string;
+}
+
+export interface CloudExtensionManifest {
+  schemaVersion: "voyant.extension-manifest.v1";
+  key: string;
+  displayName: string;
+  description?: string;
+  version: string;
+  extensionApi: string;
+  entry: string;
+  targets: CloudExtensionManifestTarget[];
+  configSchema?: unknown;
+}
+
+export interface CloudExtensionVersion {
+  id: string;
+  key: string;
+  version: string;
+  manifest: CloudExtensionManifest;
+  createdAt: string;
+}
+
+export interface CloudExtension {
+  key: string;
+  displayName: string;
+  description: string | null;
+  visibility: CloudExtensionVisibility;
+  versions?: CloudExtensionVersion[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CloudExtensionInstallDescriptor {
+  key: string;
+  version: string;
+  displayName: string;
+  extensionApi: string;
+  entryUrl: string;
+  slots: string[];
+  config?: unknown;
+}
+
+export interface CloudExtensionInstall {
+  key: string;
+  version: string;
+  enabled: boolean;
+  config?: unknown;
+  descriptor?: CloudExtensionInstallDescriptor;
+  installedAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateCloudExtensionInput {
+  key: string;
+  displayName: string;
+  description?: string;
+}
+
+export interface PublishCloudExtensionVersionInput {
+  manifest: CloudExtensionManifest;
+  bundle: Uint8Array | Blob;
+}
+
+export interface UpdateCloudExtensionInput {
+  displayName?: string;
+  description?: string | null;
+  visibility?: CloudExtensionVisibility;
+}
+
+export interface InstallCloudExtensionInput {
+  version?: string;
+}
+
+export interface UpdateCloudExtensionInstallInput {
+  enabled?: boolean;
+  config?: unknown;
+  version?: string;
 }
 
 export interface CloudOrganization {
