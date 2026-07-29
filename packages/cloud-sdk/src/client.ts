@@ -62,6 +62,7 @@ import type {
   RunBrowserCommandsInput,
   RunBrowserCommandsResult,
   SendEmailInput,
+  SendEmailOptions,
   SendSmsInput,
   SmsMessageSummary,
   StartBrowserCrawlInput,
@@ -208,9 +209,19 @@ export class VoyantCloudClient {
       this.transport.request<EmailMessageSummary>(`/email/v1/messages/${id}`),
     listMessages: () =>
       this.transport.request<EmailMessageSummary[]>("/email/v1/messages"),
-    sendMessage: (input: SendEmailInput) =>
+    /**
+     * Sends an email.
+     *
+     * `options.idempotencyKey` should be stable for the message you are
+     * sending -- a booking confirmation's id, say -- so that retrying a failed
+     * send delivers one email rather than two. Omitting it means "do not
+     * deduplicate this send", which is the right answer only when a duplicate
+     * is harmless.
+     */
+    sendMessage: (input: SendEmailInput, options: SendEmailOptions = {}) =>
       this.transport.request<EmailMessageSummary>("/email/v1/messages", {
         body: input,
+        idempotencyKey: options.idempotencyKey,
         method: "POST",
       }),
   };

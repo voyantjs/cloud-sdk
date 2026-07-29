@@ -143,6 +143,18 @@ export class VoyantTransport {
     );
     headers.set("x-voyant-sdk", this.userAgent);
 
+    // `!== undefined`, not truthiness: an explicit empty string is a caller
+    // asking for idempotency and getting it wrong, and it must fail loudly. If
+    // it were dropped here the API would see no header, mint a per-request key,
+    // and succeed -- so retries would duplicate while the caller believed they
+    // had asked for deduplication. Forwarding it lets the server reject it,
+    // which is the whole reason this option exists.
+    if (options.idempotencyKey !== undefined) {
+      headers.set("Idempotency-Key", options.idempotencyKey);
+    }
+
+    // Applied last so an explicit per-request header always wins, including
+    // over the idempotency key set above.
     if (options.headers) {
       new Headers(options.headers).forEach((value, key) => {
         headers.set(key, value);

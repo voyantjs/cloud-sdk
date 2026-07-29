@@ -115,6 +115,7 @@ export type {
   RunBrowserCommandsResult,
   SendEmailAttachment,
   SendEmailInput,
+  SendEmailOptions,
   SendSmsInput,
   SmsMessageStatus,
   SmsMessageSummary,

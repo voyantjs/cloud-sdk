@@ -28,6 +28,34 @@ sibling SDK packages.
 - arrays are serialized as repeated query params
 - non-`BodyInit` objects are JSON-encoded automatically
 - `content-type: application/json` is set for JSON request bodies
+- `idempotencyKey` is sent as the `Idempotency-Key` header
+
+## Idempotency
+
+Several Cloud API writes -- email sends among them -- accept an
+`Idempotency-Key` so a retried request delivers once rather than twice. Pass
+`idempotencyKey` on any request to set it:
+
+```ts
+await client.email.sendMessage(message, {
+  idempotencyKey: `booking-${booking.id}-confirmation`,
+});
+```
+
+The key must be **stable for the logical operation**. A value generated per
+attempt is indistinguishable from sending no key at all, because the retry
+carries a different one.
+
+An empty string is forwarded rather than dropped, so the API rejects it. A
+caller who asks for idempotency and supplies nothing usable should hear about
+it, not silently get a per-request key.
+
+The SDK never generates a key. A random one would only restate "do not
+deduplicate" while looking like real idempotency, and deriving one from the
+request body would be worse: two one-time-code emails to the same address
+differ only by the code, so a body hash would turn a legitimate resend into a
+silent replay of the first message. Only the caller knows what "the same
+operation" means.
 
 ## Response behavior
 
