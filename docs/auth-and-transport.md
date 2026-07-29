@@ -46,6 +46,10 @@ The key must be **stable for the logical operation**. A value generated per
 attempt is indistinguishable from sending no key at all, because the retry
 carries a different one.
 
+An empty string is forwarded rather than dropped, so the API rejects it. A
+caller who asks for idempotency and supplies nothing usable should hear about
+it, not silently get a per-request key.
+
 The SDK never generates a key. A random one would only restate "do not
 deduplicate" while looking like real idempotency, and deriving one from the
 request body would be worse: two one-time-code emails to the same address

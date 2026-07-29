@@ -928,3 +928,17 @@ test("cloud client surfaces extension error envelopes", async () => {
     },
   );
 });
+
+test("SendEmailOptions is exported from the built package entry point", async () => {
+  // A consumer typing a wrapper around `email.sendMessage` needs to name this
+  // type. It was public on the method signature but missing from the barrel,
+  // leaving no supported way to import it -- the package exposes no `types`
+  // subpath, so a deep import is not an option either. Asserted against the
+  // emitted declarations, which is what consumers actually resolve.
+  const { readFile } = await import("node:fs/promises");
+  const declarations = await readFile(
+    new URL("../packages/cloud-sdk/dist/index.d.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(declarations, /\bSendEmailOptions\b/);
+});

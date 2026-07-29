@@ -269,6 +269,38 @@ test("VoyantTransport omits the header when no key is given", async () => {
   assert.equal(new Headers(requestInit.headers).has("Idempotency-Key"), false);
 });
 
+/**
+ * An explicit empty string is a caller asking for idempotency and getting it
+ * wrong. Dropping it would let the API mint a per-request key and succeed, so
+ * retries would duplicate while the caller believed they had asked for
+ * deduplication -- the same silent failure this option exists to remove.
+ * Forwarding it lets the server reject it.
+ */
+test("VoyantTransport forwards an empty key rather than swallowing it", async () => {
+  let requestInit;
+
+  const transport = new VoyantTransport({
+    apiKey: "test_key",
+    fetch: async (_url, init) => {
+      requestInit = init;
+      return new Response(JSON.stringify({ data: { ok: true } }), {
+        headers: { "content-type": "application/json" },
+        status: 200,
+      });
+    },
+  });
+
+  await transport.request("/email/v1/messages", {
+    body: { subject: "hi" },
+    idempotencyKey: "",
+    method: "POST",
+  });
+
+  const headers = new Headers(requestInit.headers);
+  assert.equal(headers.has("Idempotency-Key"), true);
+  assert.equal(headers.get("Idempotency-Key"), "");
+});
+
 test("an explicit header still outranks the idempotencyKey option", async () => {
   let requestInit;
 
