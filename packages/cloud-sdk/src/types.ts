@@ -200,6 +200,15 @@ export interface SendEmailInput {
   to: string[];
 }
 
+export interface SendEmailOptions {
+  /**
+   * Stable for the message being sent, so a retried send delivers one email
+   * rather than two. See `VoyantRequestOptions.idempotencyKey` for why the SDK
+   * does not invent one.
+   */
+  idempotencyKey?: string;
+}
+
 export type BrowserSessionStatus = "active" | "closed" | "expired";
 
 export type BrowserJobKind = "crawl";

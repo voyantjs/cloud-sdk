@@ -143,6 +143,12 @@ export class VoyantTransport {
     );
     headers.set("x-voyant-sdk", this.userAgent);
 
+    if (options.idempotencyKey) {
+      headers.set("Idempotency-Key", options.idempotencyKey);
+    }
+
+    // Applied last so an explicit per-request header always wins, including
+    // over the idempotency key set above.
     if (options.headers) {
       new Headers(options.headers).forEach((value, key) => {
         headers.set(key, value);

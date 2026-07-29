@@ -211,3 +211,86 @@ test("VoyantTransport surfaces the Cloud `{ error, code }` envelope", async () =
     },
   );
 });
+
+/**
+ * Sends of this kind are gated on an `Idempotency-Key` by the Cloud API, and
+ * the SDK previously had no way to supply one. A managed tenant's customer
+ * sign-in email went out through this transport with no key, the API refused
+ * it, and because the runtime dispatches that send as a background task the
+ * refusal never surfaced -- sign-in reported success and no mail was sent.
+ */
+test("VoyantTransport sends a caller-supplied Idempotency-Key", async () => {
+  let requestInit;
+
+  const transport = new VoyantTransport({
+    apiKey: "test_key",
+    fetch: async (_url, init) => {
+      requestInit = init;
+      return new Response(JSON.stringify({ data: { ok: true } }), {
+        headers: { "content-type": "application/json" },
+        status: 200,
+      });
+    },
+  });
+
+  await transport.request("/email/v1/messages", {
+    body: { subject: "hi" },
+    idempotencyKey: "booking-9f3-confirmation",
+    method: "POST",
+  });
+
+  assert.equal(
+    new Headers(requestInit.headers).get("Idempotency-Key"),
+    "booking-9f3-confirmation",
+  );
+});
+
+test("VoyantTransport omits the header when no key is given", async () => {
+  let requestInit;
+
+  const transport = new VoyantTransport({
+    apiKey: "test_key",
+    fetch: async (_url, init) => {
+      requestInit = init;
+      return new Response(JSON.stringify({ data: { ok: true } }), {
+        headers: { "content-type": "application/json" },
+        status: 200,
+      });
+    },
+  });
+
+  await transport.request("/email/v1/messages", {
+    body: { subject: "hi" },
+    method: "POST",
+  });
+
+  // Absent, never invented: a per-attempt key would only restate "do not
+  // deduplicate" while looking like real idempotency.
+  assert.equal(new Headers(requestInit.headers).has("Idempotency-Key"), false);
+});
+
+test("an explicit header still outranks the idempotencyKey option", async () => {
+  let requestInit;
+
+  const transport = new VoyantTransport({
+    apiKey: "test_key",
+    fetch: async (_url, init) => {
+      requestInit = init;
+      return new Response(JSON.stringify({ data: { ok: true } }), {
+        headers: { "content-type": "application/json" },
+        status: 200,
+      });
+    },
+  });
+
+  await transport.request("/email/v1/messages", {
+    headers: { "Idempotency-Key": "explicit-wins" },
+    idempotencyKey: "option-loses",
+    method: "POST",
+  });
+
+  assert.equal(
+    new Headers(requestInit.headers).get("Idempotency-Key"),
+    "explicit-wins",
+  );
+});
